@@ -155,7 +155,7 @@ namespace RTREffects {
 		auto viewport = Bind::ViewScissor::Resolve(state);
 
 		m_background = std::make_shared<DrawItems::Box>();
-		m_background->GenerateVAO({ Dynamic::Dsr::ShaderReflection::GetVertexAttribs(equiShader->get_program()) }, { DrawItems::VertexType::Position });
+		m_background->GenerateVAO(Dynamic::Dsr::ShaderReflection::GetVertexAttribs(equiShader->get_program()).first, { DrawItems::VertexType::Position });
 
 		viewport->Bind();
 		render_target->Bind();
@@ -289,7 +289,7 @@ namespace RTREffects {
 		render_target->AppendTexture<GL_TEXTURE_2D>("brdf_LUT", param);
 
 		auto quad = std::make_shared<DrawItems::Plane>();
-		quad->GenerateVAO(Dynamic::Dsr::ShaderReflection::GetVertexAttribs(brdfShader->get_program()), { DrawItems::VertexType::Position,
+		quad->GenerateVAO(Dynamic::Dsr::ShaderReflection::GetVertexAttribs(brdfShader->get_program()).first, { DrawItems::VertexType::Position,
 			DrawItems::VertexType::Texcoord });
 
 		auto viewport = Bind::BindableResolver::GetBindable(ids[2]);

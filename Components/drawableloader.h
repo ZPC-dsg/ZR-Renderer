@@ -23,6 +23,13 @@ struct GeometryParameter {
 	glm::vec3 m_translate = glm::vec3(0.0);
 	std::vector<SceneGraph::Material::TextureCategory> m_texture_types;
 	std::vector<std::string> m_texture_paths;
+
+	std::vector<std::pair<LeafType, std::vector<AvailableType>>> m_instance_datas;
+
+	inline GeometryParameter& AddInstanceData(LeafType type, std::vector<AvailableType>&& data)
+	{
+		m_instance_datas.push_back(std::make_pair(type, std::move(data)));
+	}
 };
 
 class DrawableLoader {

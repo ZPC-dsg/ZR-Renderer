@@ -41,8 +41,9 @@ namespace Dynamic {
 			ELEMENT_SIZE
 		}
 
-		std::vector<VertexAttrib> ShaderReflection::GetVertexAttribs(GLuint program) noxnd {
+		std::pair<std::vector<VertexAttrib>, std::vector<VertexAttrib>> ShaderReflection::GetVertexAttribs(GLuint program) noxnd {
 			std::vector<VertexAttrib> attribs;
+			std::vector<VertexAttrib> instance_attribs;
 
 			GLint active_attribs;
 			glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &active_attribs);
@@ -58,14 +59,23 @@ namespace Dynamic {
 				glGetActiveAttrib(program, i, buff_size, &length, &element.size, &element.type, name);
 				element.name = std::string(name);
 				element.location = glGetAttribLocation(program, name);
+				glGetVertexAttribIuiv(element.location, GL_VERTEX_ATTRIB_ARRAY_DIVISOR, &element.m_divisor);
 
-				attribs.push_back(element);
+				if (element.m_divisor)
+				{
+					instance_attribs.push_back(element);
+				}
+				else
+				{
+					attribs.push_back(element);
+				}
 			}
 
 			//按location从小到大排列
 			std::ranges::sort(attribs, [](const VertexAttrib& lhs, const VertexAttrib& rhs)->bool {return lhs.location < rhs.location; });
+			std::ranges::sort(instance_attribs, [](const VertexAttrib& lhs, const VertexAttrib& rhs)->bool {return lhs.location < rhs.location; });
 
-			return attribs;
+			return std::make_pair(attribs, instance_attribs);
 		}
 
 		std::unordered_map<std::string, std::vector<ConstantAttrib>> ShaderReflection::GetConstantAttribs(GLuint program) noxnd {

@@ -40,7 +40,7 @@ namespace DrawItems {
 
 		void Draw();
 
-		void GenerateVAO(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<VertexType> instruction);
+		void GenerateVAO(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<VertexType> instruction, const std::vector<Dynamic::Dsr::VertexAttrib>& instance_attribs = {});
 
 	protected:
 		std::string m_name;
@@ -59,6 +59,8 @@ namespace DrawItems {
 		std::vector<std::vector<glm::vec4>> m_vertexcolors;
 
 		std::vector<uint32_t> m_indices;
+
+		std::vector<std::pair<LeafType, std::vector<AvailableType>>> m_instance_data = {};
 
 	private:
 		bool CheckAttribExists(const std::vector<VertexType>& attribs);

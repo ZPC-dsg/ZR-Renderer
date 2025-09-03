@@ -1,3 +1,5 @@
+#define ENABLE_SHADER_TYPE_GENERATOR
+
 #include <Dynamic/dynamic_vertex.h>
 
 namespace Dynamic {
@@ -153,6 +155,80 @@ namespace Dynamic {
 			}
 
 			m_buffer.resize(m_layout.VertexSize() * vertices);
+		}
+
+		void CPUVertexBuffer::InitializeData(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd
+		{
+			m_layout.GetInputSteppingType() == VertexLayout::InputSteppingType::Interleaved ? InitializeInterleaved(offset, std::move(data)) : InitializeContinuous(offset, std::move(data));
+			return;
+		}
+
+		void CPUVertexBuffer::InitializeInterleaved(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd
+		{
+			auto item1 = data[0];
+			switch (item1.first)
+			{
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case Type :\
+				{ \
+					if constexpr (LeafMap<Type>::valid) \
+					{ \
+						std::vector<typename LeafMap<Type>::SysType> real_data(item1.second.size()); \
+						for (size_t i = 0; i < item1.second.size(); i++) \
+						{ \
+							real_data[i] = std::get<typename LeafMap<Type>::SysType>((item1.second)[i]); \
+						} \
+						\
+						InitializeInterleaved(real_data, offset); \
+						offset += LeafMap<Type>::SysSize; \
+					} \
+					break; \
+				}
+
+				TYPE_GENERATOR
+#undef X
+			}
+
+			data.erase(data.begin());
+			if (data.size() == 0)
+			{
+				return;
+			}
+
+			InitializeInterleaved(offset, std::move(data));
+		}
+
+		void CPUVertexBuffer::InitializeContinuous(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd
+		{
+			auto item1 = data[0];
+			switch (item1.first)
+			{
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case Type :\
+				{ \
+					if constexpr (LeafMap<Type>::valid) \
+					{ \
+						std::vector<typename LeafMap<Type>::SysType> real_data(item1.second.size()); \
+						for (size_t i = 0; i < item1.second.size(); i++) \
+						{ \
+							real_data[i] = std::get<typename LeafMap<Type>::SysType>((item1.second)[i]); \
+						} \
+						\
+						InitializeContinuous(real_data, offset); \
+						offset += LeafMap<Type>::SysSize * real_data.size(); \
+					} \
+					break; \
+				}
+
+				TYPE_GENERATOR
+#undef X
+			}
+
+			data.erase(data.begin());
+			if (data.size() == 0)
+			{
+				return;
+			}
+
+			InitializeContinuous(offset, std::move(data));
 		}
 	}
 }

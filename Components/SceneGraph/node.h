@@ -88,7 +88,7 @@ namespace SceneGraph {
 
 		bool HasShader() const noexcept;
 
-		virtual void CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
+		virtual void CookNode(std::pair<std::vector<Dynamic::Dsr::VertexAttrib>, std::vector<Dynamic::Dsr::VertexAttrib>>& attribs, std::vector<DrawItems::VertexType>& instruction,
 			std::unordered_map<Material::TextureCategory,std::vector<std::pair<std::string,GLuint>>>& textures, const std::string& rel_path) = 0;
 
 		virtual void Render(ControlNode* node, bool force_update) = 0;
@@ -140,14 +140,14 @@ namespace SceneGraph {
 			return *m_materials[index];
 		}
 
-		void CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
+		void CookNode(std::pair<std::vector<Dynamic::Dsr::VertexAttrib>, std::vector<Dynamic::Dsr::VertexAttrib>>& attribs, std::vector<DrawItems::VertexType>& instruction,
 			std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path) override;
 
 		void Render(ControlNode* node, bool force_update) override;
 		void Update(ControlNode* node, size_t index = 0) override;
 
 	private:
-		void CookVertex(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, const std::vector<DrawItems::VertexType>& instruction);
+		void CookVertex(const std::pair<std::vector<Dynamic::Dsr::VertexAttrib>, std::vector<Dynamic::Dsr::VertexAttrib>>& attribs, const std::vector<DrawItems::VertexType>& instruction);
 		void CookTexture(const std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path);
 
 	private:
@@ -320,7 +320,7 @@ namespace SceneGraph {
 
 
 		void StartCooking(const std::string& rel_path);
-		void CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
+		void CookNode(std::pair<std::vector<Dynamic::Dsr::VertexAttrib>, std::vector<Dynamic::Dsr::VertexAttrib>>& attribs, std::vector<DrawItems::VertexType>& instruction,
 			std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path) override;
 
 		void StartRender();

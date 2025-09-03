@@ -5,7 +5,7 @@
 namespace DrawItems {
 	class Plane :public Drawable {
 	public:
-		Plane(const std::string& name = "");
+		Plane(const std::string& name = "", std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& instance_data = {});
 		~Plane() = default;
 
 	private:

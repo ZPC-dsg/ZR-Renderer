@@ -20,7 +20,7 @@ namespace DrawItems {
 	}
 
 	//attribs已经按照location序排列好，并且要求attribs的location从0开始连续递增，instruction中元素和attribs一一对应
-	void Drawable::GenerateVAO(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<VertexType> instruction) {
+	void Drawable::GenerateVAO(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<VertexType> instruction, const std::vector<Dynamic::Dsr::VertexAttrib>& instance_attribs) {
 		if (!CheckAttribExists(instruction)) {
 			std::string error_code = "Vertex Attributes do not match for drawable: " + m_name;
 			assert(error_code.c_str() && false);
@@ -55,12 +55,22 @@ namespace DrawItems {
 			}
 		}
 
+		std::shared_ptr<Bind::VertexBuffer> instance_buffer = nullptr;
+		if (m_instance_data.size())
+		{
+			Dynamic::Dvtx::CPUVertexBuffer instance_vert(instance_attribs, m_instance_data[0].second.size()); // 假设所有的instance的divisor都是1
+			auto data = m_instance_data;
+			instance_vert.InitializeData(0, data);
+			
+			instance_buffer = std::make_shared<Bind::VertexBuffer>(m_name + "_vertex_instanced", instance_vert);
+		}
+
 		std::shared_ptr<Bind::VertexBuffer> vert_buffer = std::make_shared<Bind::VertexBuffer>(m_name + "_vertex", vert);
 		std::shared_ptr<Bind::IndexBuffer> ind_buffer = nullptr;
 		if(m_indices.size())
 			ind_buffer = std::make_shared<Bind::IndexBuffer>(m_name + "_index", m_indices);
 		m_VAO = Bind::InputLayout::Resolve(m_name + "_VAO", std::vector<std::shared_ptr<Bind::VertexBuffer>>{vert_buffer},
-			std::vector<std::shared_ptr<Bind::VertexBuffer>>{}, ind_buffer);
+			instance_buffer ? std::vector<std::shared_ptr<Bind::VertexBuffer>>{instance_buffer} : std::vector<std::shared_ptr<Bind::VertexBuffer>>{}, ind_buffer);
 
 		m_render_index = m_VAO->HasIndexBuffer() + ((m_VAO->IsInstanceDraw()) << 1);
 		LOGI("Generating done!")

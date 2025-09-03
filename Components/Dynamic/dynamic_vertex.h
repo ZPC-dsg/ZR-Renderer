@@ -110,16 +110,19 @@ namespace Dynamic {
 
 			template <typename First, typename ...Rest>
 			void InitializeData(int offset, const std::vector<First>& first, const std::vector<Rest>&... rest) noxnd;
+			void InitializeData(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd;
 
 		private:
 			template <typename First, typename ...Rest>
 			void InitializeInterleaved(int offset, const std::vector<First>& first, const std::vector<Rest>&... rest) noxnd;
 			template <typename First, typename ...Rest>
 			void InitializeContinuous(int offset, const std::vector<First>& first, const std::vector<Rest>&... rest) noxnd;
+			void InitializeInterleaved(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd;
 			template <typename T>
 			void InitializeInterleaved(const std::vector<T>& data, int offset) noxnd;
 			template <typename T>
 			void InitializeContinuous(const std::vector<T>& data, int offset) noxnd;
+			void InitializeContinuous(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd;
 			void InitializeInterleaved(int offset) noexcept { return; }
 			void InitializeContinuous(int offset) noexcept { return; }
 

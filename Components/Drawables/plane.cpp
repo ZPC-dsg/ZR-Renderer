@@ -1,7 +1,7 @@
 #include <Drawables/plane.h>
 
 namespace DrawItems {
-	Plane::Plane(const std::string& name) :Drawable(name) {
+	Plane::Plane(const std::string& name, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& instance_data) :Drawable(name) {
 		m_positions.resize(4);
 		m_normals.resize(4);
 		m_tangents.resize(4);
@@ -37,5 +37,7 @@ namespace DrawItems {
 		m_indices = {
 			1,2,0,0,2,3
 		};
+
+		m_instance_data = std::move(instance_data);
 	}
 }
