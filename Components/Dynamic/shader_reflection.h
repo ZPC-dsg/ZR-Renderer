@@ -1,51 +1,12 @@
 #pragma once
 
 #include <Macros/conditional_noexcept.h>
+#include <Macros/shader_typedef.h>
 #include <shader.h>
 
 #include <glad/glad.h>
 #include <unordered_map>
 #include <optional>
-
-template <GLenum Type> struct GLSLTypeMap;
-#define MAPPING_IMPLEMENTATION \
-	X(GL_FLOAT, float) \
-	X(GL_FLOAT_VEC2, glm::vec2) \
-	X(GL_FLOAT_VEC3, glm::vec3) \
-	X(GL_FLOAT_VEC4, glm::vec4) \
-	X(GL_DOUBLE, double) \
-	X(GL_DOUBLE_VEC2, glm::dvec2) \
-	X(GL_DOUBLE_VEC3, glm::dvec3) \
-	X(GL_DOUBLE_VEC4, glm::dvec4) \
-	X(GL_INT, int) \
-	X(GL_INT_VEC2, glm::ivec2) \
-	X(GL_INT_VEC3, glm::ivec3) \
-	X(GL_INT_VEC4, glm::ivec4) \
-	X(GL_UNSIGNED_INT, unsigned int) \
-	X(GL_UNSIGNED_INT_VEC2, glm::uvec2) \
-	X(GL_UNSIGNED_INT_VEC3, glm::uvec3) \
-	X(GL_UNSIGNED_INT_VEC4, glm::uvec4) \
-	X(GL_BOOL, bool) \
-	X(GL_BOOL_VEC2, glm::bvec2) \
-	X(GL_BOOL_VEC3, glm::bvec3) \
-	X(GL_BOOL_VEC4, glm::bvec4) \
-	X(GL_FLOAT_MAT2, glm::mat2) \
-	X(GL_FLOAT_MAT3, glm::mat3) \
-	X(GL_FLOAT_MAT4, glm::mat4) \
-	X(GL_DOUBLE_MAT2, glm::dmat2) \
-	X(GL_DOUBLE_MAT3, glm::dmat3) \
-	X(GL_DOUBLE_MAT4, glm::dmat4)
-#define X(GLSLType, Type) \
-	template <> \
-	struct GLSLTypeMap<GLSLType> { \
-		using ConvType = Type; \
-		static constexpr size_t ConvSize = sizeof(Type); \
-	};
-
-MAPPING_IMPLEMENTATION
-#undef X
-#undef MAPPING_IMPLEMENTATION
-
 
 namespace Dynamic {
 	namespace Dsr {

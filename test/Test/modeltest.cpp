@@ -59,6 +59,8 @@ void ModelTest::render() {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	m_shader->BindWithoutUpdate();
+
 	m_shader->EditUniform("view") = globalSettings::mainCamera.get_view();
 	m_shader->EditUniform("projection") = globalSettings::mainCamera.get_perspective();
 	m_shader->EditUniform("camera_pos") = globalSettings::mainCamera.get_position();

@@ -1,23 +1,9 @@
 #pragma once
 
-#include <Macros/conditional_noexcept.h>
+#define ENABLE_SHADER_TYPE_GENERATOR
+
 #include <Dynamic/shader_reflection.h>
 #include <ogl_structures.h>
-
-#include <vector>
-#include <string>
-#include <glm/glm.hpp>
-#include <glad/glad.h>
-
-
-#define LAYOUT_ELEMENT_TYPES \
-	X( GL_FLOAT ) \
-	X( GL_FLOAT_VEC2 ) \
-	X( GL_FLOAT_VEC3 ) \
-	X( GL_FLOAT_VEC4 ) \
-	X( GL_FLOAT_MAT2 ) \
-	X( GL_FLOAT_MAT3 ) \
-	X( GL_FLOAT_MAT4 )
 
 namespace DrawItems {
 	class Drawable;
@@ -92,71 +78,12 @@ namespace Dynamic {
 
 		class VertexLayout {
 		public:
-			template<GLenum> struct Map;//需要前置声明
-
-			template<> struct Map<GL_FLOAT>
-			{
-				using SysType = float;
-				static constexpr GLenum ele_format = GL_FLOAT;
-				static constexpr int row_ele_count = 1;
-				static constexpr int col_ele_count = 1;
-				static constexpr const char* code = "Float";
-			};
-			template<> struct Map<GL_FLOAT_VEC2>
-			{
-				using SysType = glm::vec2;
-				static constexpr GLenum ele_format = GL_FLOAT;
-				static constexpr int row_ele_count = 2;
-				static constexpr int col_ele_count = 1;
-				static constexpr const char* code = "Vec2";
-			};
-			template<> struct Map<GL_FLOAT_VEC3>
-			{
-				using SysType = glm::vec3;
-				static constexpr GLenum ele_format = GL_FLOAT;
-				static constexpr int row_ele_count = 3;
-				static constexpr int col_ele_count = 1;
-				static constexpr const char* code = "Vec3";
-			};
-			template<> struct Map<GL_FLOAT_VEC4>
-			{
-				using SysType = glm::vec4;
-				static constexpr GLenum ele_format = GL_FLOAT;
-				static constexpr int row_ele_count = 4;
-				static constexpr int col_ele_count = 1;
-				static constexpr const char* code = "Vec4";
-			};
-			template<> struct Map<GL_FLOAT_MAT2>
-			{
-				using SysType = glm::mat2;
-				static constexpr GLenum ele_format = GL_FLOAT;
-				static constexpr int row_ele_count = 2;
-				static constexpr int col_ele_count = 2;
-				static constexpr const char* code = "Mat2";
-			};
-			template<> struct Map<GL_FLOAT_MAT3>
-			{
-				using SysType = glm::mat3;
-				static constexpr GLenum ele_format = GL_FLOAT;
-				static constexpr int row_ele_count = 3;
-				static constexpr int col_ele_count = 3;
-				static constexpr const char* code = "Mat3";
-			};
-			template<> struct Map<GL_FLOAT_MAT4>
-			{
-				using SysType = glm::vec3;
-				static constexpr GLenum ele_format = GL_FLOAT;
-				static constexpr int row_ele_count = 4;
-				static constexpr int col_ele_count = 4;
-				static constexpr const char* code = "Mat4";
-			};
-
 			template<template<GLenum> class F, typename... Args>
 			static constexpr auto Bridge(GLenum type, std::string name, Args&&... args) noxnd {
 				switch (type) {
-					#define X(el) case el : return F<el>::Exec(name, std::forward<Args>(args)... );
-					LAYOUT_ELEMENT_TYPES
-					#undef X
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case GLSLType : return F<GLSLType>::Exec(name, std::forward<Args>(args)... );
+					TYPE_GENERATOR
+#undef X
 				}
 				assert("Invalid element type!" && false);//一定触发断言
 				return F<GL_FLOAT>::Exec(name, std::forward<Args>(args)...);
@@ -333,5 +260,5 @@ namespace Dynamic {
 }
 
 #ifndef DVTX_SOURCE_FILE
-#undef LAYOUT_ELEMENT_TYPES
+#undef ENABLE_SHADER_TYPE_GENERATOR
 #endif

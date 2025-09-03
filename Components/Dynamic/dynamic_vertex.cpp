@@ -89,10 +89,17 @@ namespace Dynamic {
 			return SizeOf(m_attrib.type);
 		}
 
-		template <GLenum type>
+		template <GLenum Type>
 		struct SysSizeLookup {
 			static constexpr auto Exec(std::string name) noexcept {
-				return sizeof(VertexLayout::Map<type>::SysType);
+				if constexpr (GLReverseLeafMap<Type>::valid) 
+				{
+					return LeafMap<GLReverseLeafMap<Type>::SysType>::SysSize;
+				}
+				else 
+				{
+					return 0; 
+				}
 			}
 		};
 		constexpr size_t VertexLayout::Element::SizeOf(GLenum type) noxnd
@@ -100,10 +107,17 @@ namespace Dynamic {
 			return Bridge<SysSizeLookup>(type, std::string());
 		}
 
-		template <GLenum type>
+		template <GLenum Type>
 		struct CodeLookup {
 			static constexpr auto Exec(std::string name) noexcept {
-				return (name + std::string("_") + std::string(VertexLayout::Map<type>::code)).c_str();
+				if constexpr (GLReverseLeafMap<Type>::valid)
+				{
+					return LeafMap<GLReverseLeafMap<Type>::SysType>::SysCode;
+				}
+				else
+				{
+					return "";
+				}
 			}
 		};
 		const char* Dvtx::VertexLayout::Element::GetCode() const noexcept
@@ -111,11 +125,19 @@ namespace Dynamic {
 			return Bridge<CodeLookup>(m_attrib.type, m_attrib.name);
 		}
 
-		template <GLenum type>
+		template <GLenum Type>
 		struct DescGenerator {
 			static constexpr OGL_INPUT_ELEMENT_DESC Exec(std::string name, Dynamic::Dsr::VertexAttrib attrib, size_t offset) noexcept {
-				return { attrib.location, VertexLayout::Map<type>::row_ele_count, VertexLayout::Map<type>::col_ele_count,
-					VertexLayout::Map<type>::ele_format, offset };
+				if constexpr (GLReverseLeafMap<Type>::valid)
+				{
+					using ValidClass = LeafMap<GLReverseLeafMap<Type>::SysType>;
+					return { attrib.location, ValidClass::RowCount, ValidClass::ColCount,
+						ValidClass::EleFormat, offset };
+				}
+				else
+				{
+					return {};
+				}
 			}
 		};
 		OGL_INPUT_ELEMENT_DESC VertexLayout::Element::GetDesc() const noxnd {

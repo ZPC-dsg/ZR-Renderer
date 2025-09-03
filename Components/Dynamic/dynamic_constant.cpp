@@ -7,7 +7,7 @@ namespace Dynamic {
 #ifdef _DEBUG
 		std::string type_debug_output(LeafType type) {
 			switch (type) {
-#define X(Type,GLSLType,Code) case Type: return std::string(LeafMap<Type>::SysCode);
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case Type: return std::string(LeafMap<Type>::SysCode);
 				TYPE_GENERATOR
 #undef X
 			case LeafType::Struct: return "Struct";
@@ -19,7 +19,7 @@ namespace Dynamic {
 
 		std::string type_debug_output(GLenum type) {
 			switch(type) {
-#define X(Type,GLSLType,Code) case GLSLType: return std::string(LeafMap<Type>::SysCode);
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case GLSLType: return std::string(LeafMap<Type>::SysCode);
 				TYPE_GENERATOR
 #undef X
 			default:
@@ -31,7 +31,7 @@ namespace Dynamic {
 		//LayoutElement
 		std::string LayoutElement::GetSignature() const noxnd {
 			switch (m_type) {
-#define X(Type,GLSLType,Code) case Type: return LeafMap<Type>::SysCode;
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case Type: return LeafMap<Type>::SysCode;
 				TYPE_GENERATOR
 #undef X
 			case LeafType::Struct:
@@ -58,7 +58,7 @@ namespace Dynamic {
 
 		LeafType LayoutElement::GLSLTypeToLeafType(GLenum type) noexcept {
 			switch (type) {
-#define X(Type,GLSLType,Code) case GLSLType: return Type;
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case GLSLType: return Type;
 				TYPE_GENERATOR
 #undef X
 			default:
@@ -93,7 +93,7 @@ namespace Dynamic {
 			assert(m_type != LeafType::Empty);
 
 			switch (m_type) {
-#define X(Type,GLSLType,Code) case Type: return LeafMap<Type>::SysSize;
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case Type: return LeafMap<Type>::SysSize;
 				TYPE_GENERATOR
 #undef X
 			case LeafType::Struct:
@@ -109,7 +109,7 @@ namespace Dynamic {
 			assert(m_type != LeafType::Empty);
 
 			switch (m_type) {
-#define X(Type,GLSLType,Code) case Type:return m_offset.value() + LeafMap<Type>::SysSize;
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case Type:return m_offset.value() + LeafMap<Type>::SysSize;
 				TYPE_GENERATOR;
 #undef X
 			case LeafType::Struct:
@@ -152,7 +152,7 @@ namespace Dynamic {
 
 		void ConstantLayoutElement::AppendChild(const Dynamic::Dsr::ConstantTreeNode& root, const Dynamic::Dsr::ConstantEntryPoint& entry) {
 			switch (m_type) {
-#define X(Type,GLSLType,Code) case Type:
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case Type:
 				TYPE_GENERATOR
 #undef X
 					return;
@@ -254,7 +254,7 @@ namespace Dynamic {
 
 		void UniformLayoutElement::AppendChild(const Dynamic::Dsr::ConstantTreeNode& root, const Dynamic::Dsr::UniformEntryPoint& entry) {
 			switch (m_type) {
-#define X(Type,GLSLType,Code) case Type:
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case Type:
 				TYPE_GENERATOR
 #undef X
 					return;
@@ -331,7 +331,7 @@ namespace Dynamic {
 
 			if (entry.RootNode()->IsLeaf()) {
 				switch (entry[0].type) {
-#define X(Type,GLSLType,Code) case GLSLType: m_root=std::shared_ptr<UniformLayoutElement>(new UniformLayoutElement(ReverseLeafMap<typename GLSLTypeMap<GLSLType>::ConvType>::SysType, 0, entry[0].location)); break;
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case GLSLType: m_root=std::shared_ptr<UniformLayoutElement>(new UniformLayoutElement(Type, 0, entry[0].location)); break;
 					TYPE_GENERATOR
 #undef X
 				}
@@ -592,7 +592,7 @@ namespace Dynamic {
 
 		void CPUUniformBlock::InitializeVariant(AvailableType& element, GLenum type) {
 			switch (type) {
-#define X(Type,GLSLType,Code) case GLSLType: element = GLSLTypeMap<GLSLType>::ConvType(); return;
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case GLSLType: element = CType{}; return;
 				TYPE_GENERATOR
 #undef X
 			default:

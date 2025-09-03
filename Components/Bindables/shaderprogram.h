@@ -33,7 +33,7 @@ namespace Bind {
 	private:
 		static void CheckCompileErrors(GLuint program);
 
-		static void UpdateUniform(Dynamic::Dcb::LeafType type, GLint location, const Dynamic::Dcb::AvailableType& data) noxnd;
+		static void UpdateUniform(LeafType type, GLint location, const AvailableType& data) noxnd;
 
 	private:
 		std::string m_tag;

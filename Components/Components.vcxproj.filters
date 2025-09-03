@@ -240,6 +240,9 @@
     <ClInclude Include="light.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Macros\shader_typedef.h">
+      <Filter>Macros</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="storageimage.cpp">

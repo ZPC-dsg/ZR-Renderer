@@ -1,73 +1,15 @@
 #pragma once
 
+#define ENABLE_SHADER_TYPE_GENERATOR
+
 #include <Dynamic/shader_reflection.h>
+#include <Macros/shader_typedef.h>
 
 #include <variant>
 #include <functional>
 
-#define TYPE_GENERATOR \
-	X(Float,GL_FLOAT,F1) \
-	X(Float2,GL_FLOAT_VEC2,F2) \
-	X(Float3,GL_FLOAT_VEC3,F3) \
-	X(Float4,GL_FLOAT_VEC4,F4) \
-	X(Double,GL_DOUBLE,D1) \
-	X(Double2,GL_DOUBLE_VEC2,D2) \
-	X(Double3,GL_DOUBLE_VEC3,D3) \
-	X(Double4,GL_DOUBLE_VEC4,D4) \
-	X(Int,GL_INT,I1) \
-	X(Int2,GL_INT_VEC2,I2) \
-	X(Int3,GL_INT_VEC3,I3) \
-	X(Int4,GL_INT_VEC4,I4) \
-	X(Uint,GL_UNSIGNED_INT,U1) \
-	X(Uint2,GL_UNSIGNED_INT_VEC2,U2) \
-	X(Uint3,GL_UNSIGNED_INT_VEC3,U3) \
-	X(Uint4,GL_UNSIGNED_INT_VEC4,U4) \
-	X(Bool,GL_BOOL,B1) \
-	X(Bool2,GL_BOOL_VEC2,B2) \
-	X(Bool3,GL_BOOL_VEC3,B3) \
-	X(Bool4,GL_BOOL_VEC4,B4) \
-	X(FMat2,GL_FLOAT_MAT2,FM2) \
-	X(FMat3,GL_FLOAT_MAT3,FM3) \
-	X(FMat4,GL_FLOAT_MAT4,FM4) \
-	X(DMat2,GL_DOUBLE_MAT2,DM2) \
-	X(DMat3,GL_DOUBLE_MAT3,DM3) \
-	X(DMat4,GL_DOUBLE_MAT4,DM4)
-
 namespace Dynamic {
 	namespace Dcb {
-		enum LeafType {
-#define X(Type,GLSLType,Code) Type,
-			TYPE_GENERATOR
-#undef X
-			Struct,
-			Array,
-			Empty
-		};
-
-		template <LeafType Type> struct LeafMap { static constexpr bool valid = false; };
-#define X(Type,GLSLType,Code) \
-		template <> \
-		struct LeafMap<Type> { \
-			using SysType = typename GLSLTypeMap<GLSLType>::ConvType; \
-			static constexpr size_t SysSize = GLSLTypeMap<GLSLType>::ConvSize; \
-			static constexpr const char* SysCode = #Code; \
-			static constexpr bool valid = true; \
-		};
-
-		TYPE_GENERATOR
-#undef X
-	    
-		template <typename T> struct ReverseLeafMap { static constexpr bool valid = false; };
-#define X(Type,GLSLType,Code) \
-		template <> \
-		struct ReverseLeafMap<typename LeafMap<Type>::SysType> { \
-			static constexpr LeafType SysType = Type; \
-		    static constexpr bool valid = true; \
-		};
-
-		TYPE_GENERATOR
-#undef X
-
 #ifdef _DEBUG
 		std::string type_debug_output(LeafType type);
 		std::string type_debug_output(GLenum type);
@@ -131,7 +73,7 @@ namespace Dynamic {
 			{
 				switch (m_type)
 				{
-#define X(Type,GLSLType,Code) case Type: assert(typeid(LeafMap<Type>::SysType) == typeid(T)); return m_offset.value();
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case Type: assert(typeid(LeafMap<Type>::SysType) == typeid(T)); return m_offset.value();
 					TYPE_GENERATOR
 #undef X
 				default:
@@ -172,7 +114,7 @@ namespace Dynamic {
 			{
 				switch (m_type)
 				{
-#define X(Type,GLSLType,Code) case Type: assert(typeid(LeafMap<Type>::SysType) == typeid(T)); return m_location.value();
+#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case Type: assert(typeid(LeafMap<Type>::SysType) == typeid(T)); return m_location.value();
 					TYPE_GENERATOR
 #undef X
 				default:
@@ -342,15 +284,6 @@ namespace Dynamic {
 		private:
 			const char* m_data;
 		};
-
-		using AvailableType = std::variant<float, glm::vec2, glm::vec3, glm::vec4, double, glm::dvec2, glm::dvec3, glm::dvec4, int, glm::ivec2, glm::ivec3, glm::ivec4,
-			unsigned int, glm::uvec2, glm::uvec3, glm::uvec4, bool, glm::bvec2, glm::bvec3, glm::bvec4, glm::mat2, glm::mat3, glm::mat4, glm::dmat2, glm::dmat3, glm::dmat4>;
-
-		template<class T, class V>
-		struct IsVariantMember;
-
-		template<class T, class... ALL_V>
-		struct IsVariantMember<T, std::variant<ALL_V...>> : public std::disjunction<std::is_same<T, ALL_V>...> {};
 
 		class ConstUniformElementRef :public ConstElementRef<ConstUniformElementRef> {
 			friend class CPUUniformBlock;
@@ -549,5 +482,5 @@ namespace Dynamic {
 }
 
 #ifndef DYNAMIC_CONSTANT_SOURCE_FILE
-#undef TYPE_GENERATOR
+#undef ENABLE_SHADER_TYPE_GENERATOR
 #endif

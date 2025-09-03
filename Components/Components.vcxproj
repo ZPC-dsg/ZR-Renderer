@@ -193,6 +193,7 @@
     <ClInclude Include="light.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="Macros\conditional_noexcept.h" />
+    <ClInclude Include="Macros\shader_typedef.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="models.h" />
     <ClInclude Include="ogl_structures.h" />

@@ -68,89 +68,89 @@ namespace Bind {
 		}
 	}
 
-	void ShaderProgram::UpdateUniform(Dynamic::Dcb::LeafType type, GLint location, const Dynamic::Dcb::AvailableType& data) noxnd {
+	void ShaderProgram::UpdateUniform(LeafType type, GLint location, const AvailableType& data) noxnd {
 		switch (type) {
-		case Dynamic::Dcb::LeafType::Float:
+		case LeafType::Float:
 			glUniform1f(location, std::get<float>(data));
 			return;
-		case Dynamic::Dcb::LeafType::Float2:
+		case LeafType::Float2:
 			glUniform2fv(location, 1, &(std::get<glm::vec2>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Float3:
+		case LeafType::Float3:
 			glUniform3fv(location, 1, &(std::get<glm::vec3>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Float4:
+		case LeafType::Float4:
 			glUniform4fv(location, 1, &(std::get<glm::vec4>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Double:
+		case LeafType::Double:
 			glUniform1d(location, std::get<double>(data));
 			return;
-		case Dynamic::Dcb::LeafType::Double2:
+		case LeafType::Double2:
 			glUniform2dv(location, 1, &(std::get<glm::dvec2>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Double3:
+		case LeafType::Double3:
 			glUniform3dv(location, 1, &(std::get<glm::dvec3>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Double4:
+		case LeafType::Double4:
 			glUniform4dv(location, 1, &(std::get<glm::dvec4>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Int:
+		case LeafType::Int:
 			glUniform1i(location, std::get<int>(data));
 			return;
-		case Dynamic::Dcb::LeafType::Int2:
+		case LeafType::Int2:
 			glUniform2iv(location, 1, &(std::get<glm::ivec2>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Int3:
+		case LeafType::Int3:
 			glUniform3iv(location, 1, &(std::get<glm::ivec3>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Int4:
+		case LeafType::Int4:
 			glUniform4iv(location, 1, &(std::get<glm::ivec4>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Uint:
+		case LeafType::Uint:
 			glUniform1ui(location, std::get<unsigned int>(data));
 			return;
-		case Dynamic::Dcb::LeafType::Uint2:
+		case LeafType::Uint2:
 			glUniform2uiv(location, 1, &(std::get<glm::uvec2>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Uint3:
+		case LeafType::Uint3:
 			glUniform3uiv(location, 1, &(std::get<glm::uvec3>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Uint4:
+		case LeafType::Uint4:
 			glUniform4uiv(location, 1, &(std::get<glm::uvec4>(data)[0]));
 			return;
-		case Dynamic::Dcb::LeafType::Bool:
+		case LeafType::Bool:
 			glUniform1i(location, std::get<bool>(data));
 			return;
-		case Dynamic::Dcb::LeafType::Bool2:
+		case LeafType::Bool2:
 			auto l_data = std::get<glm::bvec2>(data);
 			glUniform2i(location, (int)l_data[0], (int)l_data[1]);
 			return;
-		case Dynamic::Dcb::LeafType::Bool3: {
+		case LeafType::Bool3: {
 			auto l_data = std::get<glm::bvec3>(data);
 			glUniform3i(location, (int)l_data[0], (int)l_data[1], (int)l_data[2]);
 			return;
 		}
-		case Dynamic::Dcb::LeafType::Bool4: {
+		case LeafType::Bool4: {
 			auto l_data = std::get<glm::bvec4>(data);
 			glUniform4i(location, (int)l_data[0], (int)l_data[1], (int)l_data[2], (int)l_data[3]);
 			return;
 		}
-		case Dynamic::Dcb::LeafType::FMat2:
+		case LeafType::FMat2:
 			glUniformMatrix2fv(location, 1, GL_FALSE, &(std::get<glm::mat2>(data)[0][0]));
 			return;
-		case Dynamic::Dcb::LeafType::FMat3:
+		case LeafType::FMat3:
 			glUniformMatrix3fv(location, 1, GL_FALSE, &(std::get<glm::mat3>(data)[0][0]));
 			return;
-		case Dynamic::Dcb::LeafType::FMat4:
+		case LeafType::FMat4:
 			glUniformMatrix4fv(location, 1, GL_FALSE, &(std::get<glm::mat4>(data)[0][0]));
 			return;
-		case Dynamic::Dcb::LeafType::DMat2:
+		case LeafType::DMat2:
 			glUniformMatrix2dv(location, 1, GL_FALSE, &(std::get<glm::dmat2>(data)[0][0]));
 			return;
-		case Dynamic::Dcb::LeafType::DMat3:
+		case LeafType::DMat3:
 			glUniformMatrix3dv(location, 1, GL_FALSE, &(std::get<glm::dmat3>(data)[0][0]));
 			return;
-		case Dynamic::Dcb::LeafType::DMat4:
+		case LeafType::DMat4:
 			glUniformMatrix4dv(location, 1, GL_FALSE, &(std::get<glm::dmat4>(data)[0][0]));
 			return;
 		default:
