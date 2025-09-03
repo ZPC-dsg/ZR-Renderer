@@ -154,46 +154,5 @@ namespace Dynamic {
 
 			m_buffer.resize(m_layout.VertexSize() * vertices);
 		}
-
-		/*
-		// Vertex
-		Vertex::Vertex(char* pData, const VertexLayout& layout) noxnd
-			: m_data(pData), m_layout(layout)
-		{
-			assert(pData != nullptr);
-		}
-		ConstVertex::ConstVertex(const Vertex& v) noxnd
-			: m_vertex(v)
-		{
-		}
-
-		Vertex CPUVertexBuffer::Back() noxnd
-		{
-			assert(m_buffer.size() != 0u);
-			return Vertex(m_buffer.data() + m_buffer.size() - m_layout.InterleavedSize(), m_layout);
-		}
-		Vertex CPUVertexBuffer::Front() noxnd
-		{
-			assert(m_buffer.size() != 0u);
-			return Vertex(m_buffer.data(), m_layout);
-		}
-		Vertex CPUVertexBuffer::operator[](size_t i) noxnd
-		{
-			assert(i < m_layout.GetCount());
-			return Vertex(m_buffer.data() + m_layout.InterleavedSize() * i, m_layout);
-		}
-		ConstVertex CPUVertexBuffer::Back() const noxnd
-		{
-			return const_cast<CPUVertexBuffer*>(this)->Back();
-		}
-		ConstVertex CPUVertexBuffer::Front() const noxnd
-		{
-			return const_cast<CPUVertexBuffer*>(this)->Front();
-		}
-		ConstVertex CPUVertexBuffer::operator[](size_t i) const noxnd
-		{
-			return const_cast<CPUVertexBuffer&>(*this)[i];
-		}
-		*/
 	}
 }

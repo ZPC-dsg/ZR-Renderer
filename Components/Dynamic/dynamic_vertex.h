@@ -11,71 +11,6 @@ namespace DrawItems {
 
 namespace Dynamic {
 	namespace Dvtx {
-		/*
-		class Vertex {
-			friend class CPUVertexBuffer;
-
-		public:
-			Vertex(char* bytes, const VertexLayout& layout) noxnd;
-
-			template <GLenum Type>
-			auto& Attr(std::string name) noxnd {
-				auto pAttribute = m_data + m_layout.Resolve<Type>(name).GetOffset();
-				return *reinterpret_cast<typename VertexLayout::Map<Type>::SysType*>(pAttribute);
-			}
-
-			template <typename T>
-			void SetAttributeByIndex(size_t i, T&& val) noxnd {
-				const auto& element = m_layout.ResolveByIndex(i);
-				auto pAttribute = m_data + element.GetOffset();
-				VertexLayout::Bridge<AttributeSetting>(element.GetType(), this, pAttribute, std::forward<T>(val));
-			}
-
-		private:
-			template <typename First, typename ...Rest>
-			void SetAttributeByIndex(size_t i, First&& first, Rest&&... rest) noxnd {
-				SetAttributeByIndex(i, std::forward<First>(first));
-				SetAttributeByIndex(i + 1, std::forward<Rest>(rest)...);
-			}
-
-			template<GLenum DestLayoutType, typename SrcType>
-			void SetAttribute(char* pAttribute, SrcType&& val) noxnd {
-				using Dest = typename VertexLayout::Map<DestlayoutType>::SysType;
-				if constexpr (std::is_assignable(Dest, SrcType)::value) {
-					*reinterpret_cast<Dest*>(pAttribute) = val;
-				}
-				else {
-					assert("Parameter attribute type mismatch!" && false);
-				}
-			}
-
-			template <GLenum type>
-			struct AttributeSetting {
-				template <typename T>
-				static constexpr auto Exec(std::string name, Vertex* vertex, char* pAttribute, T&& val) noxnd {
-					return vertex->SetAttribute<type>(pAttribute, std::forward<T>(val));
-				}
-			};
-
-		private:
-			char* m_data = nullptr;
-			const VertexLayout& m_layout;
-		};
-
-		class ConstVertex
-		{
-		public:
-			ConstVertex( const Vertex& v ) noxnd;
-			template<GLenum Type>
-			const auto& Attr(std::string name) const noxnd
-			{
-				return const_cast<Vertex&>(vertex).Attr<Type>(name);
-			}
-		private:
-			Vertex m_vertex;
-		};
-		*/
-
 		class VertexLayout {
 		public:
 			template<template<GLenum> class F, typename... Args>
@@ -175,24 +110,6 @@ namespace Dynamic {
 
 			template <typename First, typename ...Rest>
 			void InitializeData(int offset, const std::vector<First>& first, const std::vector<Rest>&... rest) noxnd;
-			/*
-			template <typename ...Params>
-			void EmplaceBack(Params&&... params) noxnd {
-				assert(sizeof...(params) == m_layout.GetElementCount() && "Param count doesn't match number of vertex elements");
-				buffer.resize(buffer.size() + m_layout.Size());
-				Back().SetAttributeByIndex(0u, std::forward<Params>(params)...);
-			}
-			*/
-
-			//仅限对于Interleaved布局可用
-			/*
-			Vertex Back() noxnd;
-			ConstVertex Back() const noxnd;
-			Vertex Front() noxnd;
-			ConstVertex Front() const noxnd;
-			Vertex operator[](size_t i) noxnd;
-			ConstVertex operator[](size_t i) const noxnd;
-			*/
 
 		private:
 			template <typename First, typename ...Rest>
