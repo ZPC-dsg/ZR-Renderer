@@ -37,7 +37,7 @@ namespace OITEffects
 
 		ImGui::SliderInt("sample count", &m_sample_count, 1, 16);
 		m_sample_side_count = std::sqrt(m_sample_count);
-
+		m_sample_count = std::pow(m_sample_side_count, 2);
 		ImGui::End();
 	}
 
@@ -94,6 +94,8 @@ namespace OITEffects
 		instance_data.push_back(std::make_pair(LeafType::Float4, std::move(colors)));
 
 		m_transparent_proxy = DrawableLoader::LoadGeometry<GeometryType::Sphere>(m_main_scene, param);
+
+		// auto sample_texture = 
 	}
 
 	void OIT::prepare_OITdata()

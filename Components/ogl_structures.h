@@ -92,6 +92,7 @@ struct OGL_TEXTURE2D_DESC {
 	GLsizei height = 0.0;
 
 	GLenum internal_format = GL_RGB8;//GPU端的图像数据存储格式，使用NamedStorage系列函数指定内存的时候必须使用sized格式，也就是基础格式后面要加上通道占用位数等信息
+	// 而在用作storage texture的存储格式的时候还需要加上数据类型标识（F,I,UI）
 	GLenum cpu_format = GL_RGB;//CPU端的图像数据存储格式
 	GLenum data_type = GL_UNSIGNED_BYTE;//单通道图像数据格式
 
@@ -99,6 +100,8 @@ struct OGL_TEXTURE2D_DESC {
 	unsigned int samplecount = 1;
 
 	bool fixed_sample_location = true;
+
+	GLenum access_mode = GL_READ_WRITE; // 仅storage texture需要
 
 	static std::string GlobalTag(OGL_TEXTURE2D_DESC desc) noexcept;
 };

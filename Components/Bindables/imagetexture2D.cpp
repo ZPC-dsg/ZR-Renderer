@@ -49,7 +49,7 @@ namespace Bind {
 	}
 
 	void ImageTexture2D::UnBind() noxnd {
-		m_resource->Bind(0);
+		m_resource->UnBind(0);
 	}
 
 	std::shared_ptr<ImageTexture2D> ImageTexture2D::Resolve(const std::string& tag, const std::string& path, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool is_model, bool generate_mip) {

@@ -75,6 +75,9 @@ public:
 	~RawTexture2D();
 
 	void Bind(GLuint unit) noxnd;
+	void BindAsStorage(GLuint unit, GLboolean is_layered = GL_TRUE, GLint layer = 0) noxnd;
+	void UnBind(GLuint unit) noxnd;
+	void UnBindAsStorage(GLuint unit) noxnd;
 	void Storage(const OGL_TEXTURE2D_DESC& desc, unsigned int miplevels = 1) noxnd;
 	void Update(const OGL_RECT& range, GLenum format, GLenum type, const void* data, bool genMip = false) noxnd;
 	void UpdateSlice(const OGL_RECT& range, GLenum format, GLenum type, const void* data, unsigned int slice = 0, bool genMip = false) noxnd;

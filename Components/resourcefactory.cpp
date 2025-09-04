@@ -113,6 +113,22 @@ void RawTexture2D::Bind(GLuint unit) noxnd {
 	glBindTextureUnit(unit, m_resource);
 }
 
+void RawTexture2D::UnBind(GLuint unit) noxnd
+{
+	glBindTextureUnit(unit, 0);
+}
+
+void RawTexture2D::BindAsStorage(GLuint unit, GLboolean is_layered, GLint layer)
+{
+	// mip level始终设置为0，因为在storage texture中使用mipmap没有太大意义
+	glBindImageTexture(unit, m_resource, 0, is_layered, layer, m_desc.access_mode, m_desc.internal_format);
+}
+
+void RawTexture2D::UnBindAsStorage(GLuint unit) noxnd
+{
+	glBindImageTexture(unit, 0, 0, GL_TRUE, 0, m_desc.access_mode, m_desc.internal_format);
+}
+
 void RawTexture2D::Storage(const OGL_TEXTURE2D_DESC& desc, unsigned int miplevels) noxnd {
 	m_desc = desc;
 
