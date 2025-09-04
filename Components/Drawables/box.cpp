@@ -1,7 +1,7 @@
 #include <Drawables/box.h>
 
 namespace DrawItems {
-	Box::Box(const std::string& name, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& instance_data) :Drawable(name) {
+	Box::Box(const std::string& name, const std::vector<std::pair<LeafType, std::vector<AvailableType>>>& instance_data) :Drawable(name) {
 		m_positions.resize(24);
 		m_normals.resize(24);
 		m_tangents.resize(24);
@@ -168,6 +168,6 @@ namespace DrawItems {
 			21,22,20,20,22,23
 		};
 
-		m_instance_data = std::move(instance_data);
+		m_instance_data = instance_data;
 	}
 }

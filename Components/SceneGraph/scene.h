@@ -22,7 +22,7 @@ namespace SceneGraph {
 		~Scene() = default;
 
 		inline void SetName(const std::string& name) noexcept { m_name = name; };
-		const std::string& GetName(const std::string& name) noexcept { return m_name; };
+		const std::string& GetName() noexcept { return m_name; };
 
 		void AddMaterial(std::unique_ptr<Material>&& mat);
 		void AddDrawable(const std::type_index& type, std::unique_ptr<DrawItems::Drawable>&& item);

@@ -137,8 +137,13 @@ void Utils::start() {
 
         processInput();
 
-        if(globalSettings::window_valid)
+        if (globalSettings::window_valid)
+        {
+            ui_newFrame();
+            prepare_ui(m_main_scene.GetName());
             render();
+            draw_ui();
+        }
 
         glfwSwapBuffers(globalSettings::mainWindow);
         glfwPollEvents();

@@ -74,7 +74,7 @@ std::shared_ptr<SceneGraph::DrawableProxy> DrawableLoader::LoadGeometry(SceneGra
 	switch (type) {
 #define X(Type) \
 	case GeometryType::Type: { \
-		std::unique_ptr<DrawItems::Drawable> item(new DrawItems::Type(param.m_name, std::forward<Args>(args)...)); \
+		std::unique_ptr<DrawItems::Drawable> item(new DrawItems::Type(param.m_name, param.m_instance_datas, std::forward<Args>(args)...)); \
 		geo->AddDrawable(*item); \
 		scene.AddDrawable(typeid(DrawItems::Type), std::move(item)); \
 		mat = std::unique_ptr<SceneGraph::Material>(new SceneGraph::Material(#Type + std::string("_") + param.m_name + "_material")); \
@@ -123,7 +123,7 @@ static void DrawableLoader::LoadGeometryAsChild(SceneGraph::Scene& scene, const 
 	switch (type) {
 #define X(Type) \
 	case GeometryType::Type: { \
-		std::unique_ptr<DrawItems::Drawable> item(new DrawItems::Type(param.m_name, std::forward<Args>(args)...)); \
+		std::unique_ptr<DrawItems::Drawable> item(new DrawItems::Type(param.m_name, param.m_instance_datas, std::forward<Args>(args)...)); \
 		geo->AddDrawable(*item); \
 		scene.AddDrawable(typeid(DrawItems::Type), std::move(item)); \
 		mat = std::unique_ptr<SceneGraph::Material>(new SceneGraph::Material(#Type + std::string("_") + param.m_name + "_material")); \

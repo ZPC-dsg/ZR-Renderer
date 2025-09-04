@@ -4,7 +4,7 @@
 #include <glm/ext/scalar_constants.hpp>
 
 namespace DrawItems {
-	Sphere::Sphere(const std::string& name, unsigned int levels, unsigned int slices, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& instance_data)
+	Sphere::Sphere(const std::string& name, const std::vector<std::pair<LeafType, std::vector<AvailableType>>>& instance_data, unsigned int levels, unsigned int slices)
 		:Drawable(name), m_levels(levels), m_slices(slices)
 	{
         float radius = 1.0f;
@@ -100,6 +100,6 @@ namespace DrawItems {
             }
         }
 
-        m_instance_data = std::move(instance_data);
+        m_instance_data = instance_data;
 	}
 }

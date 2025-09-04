@@ -6,7 +6,7 @@
 namespace DrawItems {
 	class Box :public Drawable {
 	public:
-		Box(const std::string& name = "", std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& instance_data = {});
+		Box(const std::string& name = "", const std::vector<std::pair<LeafType, std::vector<AvailableType>>>& instance_data = {});
 		~Box() = default;
 
 	private:

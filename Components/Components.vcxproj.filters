@@ -61,6 +61,15 @@
     <Filter Include="SceneGraph\源文件">
       <UniqueIdentifier>{bf12314f-42b6-4857-a027-c4e86af8125d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{570c1e2a-4748-4c66-a93a-aea02fc0ae23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\头文件">
+      <UniqueIdentifier>{fe060cbe-ad8f-4c9c-93ab-5cd2e5e3542e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\源文件">
+      <UniqueIdentifier>{d32ab770-6d02-46f8-a28e-e87f91060f9c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
@@ -243,6 +252,9 @@
     <ClInclude Include="Macros\shader_typedef.h">
       <Filter>Macros</Filter>
     </ClInclude>
+    <ClInclude Include="Common\random_generator.h">
+      <Filter>Common\头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="storageimage.cpp">
@@ -421,6 +433,9 @@
     </ClCompile>
     <ClCompile Include="drawableloader.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\random_generator.cpp">
+      <Filter>Common\源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

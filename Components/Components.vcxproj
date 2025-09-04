@@ -173,6 +173,7 @@
     <ClInclude Include="Bindables\viewscissor.h" />
     <ClInclude Include="buffer.h" />
     <ClInclude Include="camera.h" />
+    <ClInclude Include="Common\random_generator.h" />
     <ClInclude Include="computeshader.h" />
     <ClInclude Include="cpuTimer.h" />
     <ClInclude Include="drawableloader.h" />
@@ -232,6 +233,7 @@
     <ClCompile Include="Bindables\viewscissor.cpp" />
     <ClCompile Include="buffer.cpp" />
     <ClCompile Include="camera.cpp" />
+    <ClCompile Include="Common\random_generator.cpp" />
     <ClCompile Include="computeshader.cpp" />
     <ClCompile Include="cpuTimer.cpp" />
     <ClCompile Include="drawableloader.cpp" />

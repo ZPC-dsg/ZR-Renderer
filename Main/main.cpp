@@ -11,7 +11,7 @@ int main() {
 
 	// RTREffects::PBR_IBL app("PBR");
 	// OITEffects::OIT app("OIT");
-	 ModelTest app("scene");
+	ModelTest app("scene");
 	// TestConstant app;
 	app.start();
 
