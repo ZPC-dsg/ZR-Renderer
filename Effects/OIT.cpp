@@ -3,6 +3,8 @@
 #include <SceneGraph/modelproxy.h>
 #include <SceneGraph/drawableproxy.h>
 #include <Bindables/rendertarget.h>
+#include <Bindables/storagetexture2D.h>
+#include <Bindables/storagetexture2Darray.h>
 #include <assimploader.h>
 #include <drawableloader.h>
 #include <Bindables/shaderprogram.h>
@@ -95,7 +97,22 @@ namespace OITEffects
 
 		m_transparent_proxy = DrawableLoader::LoadGeometry<GeometryType::Sphere>(m_main_scene, param);
 
-		// auto sample_texture = 
+		OGL_TEXTURE2D_DESC desc;
+		desc.target = GL_TEXTURE_2D_ARRAY;
+		desc.width = m_sample_side_count * globalSettings::screen_width;
+		desc.height = m_sample_side_count * globalSettings::screen_height;
+		desc.internal_format = GL_RGB16F;
+		desc.arrayslices = 3;
+		auto sample_texture = Bind::StorageTexture2DArray::Resolve("sample_texture", desc, 0);
+		m_transparent_proxy->AddRootBindable(sample_texture);
+
+		desc.target = GL_TEXTURE_2D;
+		desc.width = globalSettings::screen_width;
+		desc.height = globalSettings::screen_height;
+		desc.internal_format = GL_R32UI;
+		desc.arrayslices = 1;
+		auto count_texture = Bind::StorageTexture2D::Resolve("sample_count_texture", desc, 1);
+		m_transparent_proxy->AddRootBindable(count_texture);
 	}
 
 	void OIT::prepare_OITdata()

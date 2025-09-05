@@ -169,6 +169,7 @@
     <ClInclude Include="Bindables\rendertarget.h" />
     <ClInclude Include="Bindables\shaderobject.h" />
     <ClInclude Include="Bindables\shaderprogram.h" />
+    <ClInclude Include="Bindables\storagebuffer.h" />
     <ClInclude Include="Bindables\storagetexture2D.h" />
     <ClInclude Include="Bindables\storagetexture2Darray.h" />
     <ClInclude Include="Bindables\vertexbuffer.h" />
@@ -231,6 +232,7 @@
     <ClCompile Include="Bindables\rendertarget.cpp" />
     <ClCompile Include="Bindables\shaderobject.cpp" />
     <ClCompile Include="Bindables\shaderprogram.cpp" />
+    <ClCompile Include="Bindables\storagebuffer.cpp" />
     <ClCompile Include="Bindables\storagetexture2D.cpp" />
     <ClCompile Include="Bindables\storagetexture2Darray.cpp" />
     <ClCompile Include="Bindables\vertexbuffer.cpp" />
