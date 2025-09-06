@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClInclude Include="assimploader.h" />
     <ClInclude Include="Bindables\abstracttexture.h" />
+    <ClInclude Include="Bindables\atomicounter.h" />
     <ClInclude Include="Bindables\bindable.h" />
     <ClInclude Include="Bindables\bindable_resolver.h" />
     <ClInclude Include="Bindables\blendstate.h" />
@@ -165,13 +166,16 @@
     <ClInclude Include="Bindables\includer.h" />
     <ClInclude Include="Bindables\indexbuffer.h" />
     <ClInclude Include="Bindables\inputlayout.h" />
+    <ClInclude Include="Bindables\pixelunpackbuffer.h" />
     <ClInclude Include="Bindables\rasterizer.h" />
     <ClInclude Include="Bindables\rendertarget.h" />
+    <ClInclude Include="Bindables\Sampler.h" />
     <ClInclude Include="Bindables\shaderobject.h" />
     <ClInclude Include="Bindables\shaderprogram.h" />
     <ClInclude Include="Bindables\storagebuffer.h" />
     <ClInclude Include="Bindables\storagetexture2D.h" />
     <ClInclude Include="Bindables\storagetexture2Darray.h" />
+    <ClInclude Include="Bindables\texturebuffer.h" />
     <ClInclude Include="Bindables\vertexbuffer.h" />
     <ClInclude Include="Bindables\viewscissor.h" />
     <ClInclude Include="buffer.h" />
@@ -219,6 +223,7 @@
   <ItemGroup>
     <ClCompile Include="assimploader.cpp" />
     <ClCompile Include="Bindables\abstracttexture.cpp" />
+    <ClCompile Include="Bindables\atomicounter.cpp" />
     <ClCompile Include="Bindables\bindable.cpp" />
     <ClCompile Include="Bindables\blendstate.cpp" />
     <ClCompile Include="Bindables\constantbuffer.cpp" />
@@ -228,13 +233,16 @@
     <ClCompile Include="Bindables\imagetexture2Darray.cpp" />
     <ClCompile Include="Bindables\indexbuffer.cpp" />
     <ClCompile Include="Bindables\inputlayout.cpp" />
+    <ClCompile Include="Bindables\pixelunpackbuffer.cpp" />
     <ClCompile Include="Bindables\rasterizer.cpp" />
     <ClCompile Include="Bindables\rendertarget.cpp" />
+    <ClCompile Include="Bindables\Sampler.cpp" />
     <ClCompile Include="Bindables\shaderobject.cpp" />
     <ClCompile Include="Bindables\shaderprogram.cpp" />
     <ClCompile Include="Bindables\storagebuffer.cpp" />
     <ClCompile Include="Bindables\storagetexture2D.cpp" />
     <ClCompile Include="Bindables\storagetexture2Darray.cpp" />
+    <ClCompile Include="Bindables\texturebuffer.cpp" />
     <ClCompile Include="Bindables\vertexbuffer.cpp" />
     <ClCompile Include="Bindables\viewscissor.cpp" />
     <ClCompile Include="buffer.cpp" />

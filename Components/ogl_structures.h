@@ -88,8 +88,8 @@ struct OGL_INPUT_ELEMENT_DESC {
 struct OGL_TEXTURE2D_DESC {
 	GLenum target;
 
-	GLsizei width = 0.0;
-	GLsizei height = 0.0;
+	GLsizei width = 0;
+	GLsizei height = 0;
 
 	GLenum internal_format = GL_RGB8;//GPU端的图像数据存储格式，使用NamedStorage系列函数指定内存的时候必须使用sized格式，也就是基础格式后面要加上通道占用位数等信息
 	// 而在用作storage texture的存储格式的时候还需要加上数据类型标识（F,I,UI）

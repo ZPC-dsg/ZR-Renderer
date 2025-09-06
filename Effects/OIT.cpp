@@ -10,6 +10,8 @@
 #include <Bindables/shaderprogram.h>
 #include <Common/random_generator.h>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace OITEffects
 {
 	OIT::OIT(const std::string& name)
@@ -78,41 +80,29 @@ namespace OITEffects
 		auto scale_data = Common::UniformGenerator::Generate({ 0.2f, 0.2f, 0.2f }, { 5.0f, 5.0f, 5.0f }, 100);
 		auto color_data = Common::UniformGenerator::Generate({ 0.0f, 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, 100);
 
-		std::vector<AvailableType> translates(translate_data.size());
-		std::vector<AvailableType> scales(scale_data.size());
+		std::vector<AvailableType> transforms(translate_data.size());
 		std::vector<AvailableType> colors(color_data.size());
 		auto transform_lambda = [&]()
 			{
-				for (size_t i = 0; i < translates.size(); i++)
+				for (size_t i = 0; i < transforms.size(); i++)
 				{
-					translates[i] = translate_data[i];
-					scales[i] = scale_data[i];
+					glm::mat4 trans = glm::mat4(1.0f);
+					trans = glm::scale(trans, scale_data[i]);
+					trans = glm::translate(trans, translate_data[i]);
+					transforms[i] = trans;
+
 					colors[i] = color_data[i];
 				}
 			};
 		transform_lambda();
-		instance_data.push_back(std::make_pair(LeafType::Float3, std::move(translates)));
-		instance_data.push_back(std::make_pair(LeafType::Float3, std::move(scales)));
+		instance_data.push_back(std::make_pair(LeafType::FMat4, std::move(transforms)));
 		instance_data.push_back(std::make_pair(LeafType::Float4, std::move(colors)));
 
 		m_transparent_proxy = DrawableLoader::LoadGeometry<GeometryType::Sphere>(m_main_scene, param);
 
 		OGL_TEXTURE2D_DESC desc;
-		desc.target = GL_TEXTURE_2D_ARRAY;
-		desc.width = m_sample_side_count * globalSettings::screen_width;
-		desc.height = m_sample_side_count * globalSettings::screen_height;
-		desc.internal_format = GL_RGB16F;
-		desc.arrayslices = 3;
-		auto sample_texture = Bind::StorageTexture2DArray::Resolve("sample_texture", desc, 0);
-		m_transparent_proxy->AddRootBindable(sample_texture);
-
 		desc.target = GL_TEXTURE_2D;
-		desc.width = globalSettings::screen_width;
-		desc.height = globalSettings::screen_height;
-		desc.internal_format = GL_R32UI;
-		desc.arrayslices = 1;
-		auto count_texture = Bind::StorageTexture2D::Resolve("sample_count_texture", desc, 1);
-		m_transparent_proxy->AddRootBindable(count_texture);
+		// auto start_offset_image = Bind::StorageTexture2D::Resolve()
 	}
 
 	void OIT::prepare_OITdata()

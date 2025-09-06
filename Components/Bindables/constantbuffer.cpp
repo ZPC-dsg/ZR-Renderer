@@ -78,7 +78,7 @@ namespace Bind {
 	}
 
 	void ConstantBuffer::Update() noxnd {
-		m_buffer->UpdataMap(m_cpubuffer->GetSizeInBytes(), 0, (void*)m_cpubuffer->GetData());
+		m_buffer->UpdateMap(m_cpubuffer->GetSizeInBytes(), 0, (void*)m_cpubuffer->GetData());
 	}
 
 	std::type_index ConstantBuffer::GetTypeInfo() const noexcept {

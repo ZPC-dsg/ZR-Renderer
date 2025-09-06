@@ -2,19 +2,20 @@
 
 #include <Bindables/abstracttexture.h>
 
+// TODO : 添加使用PUB传入数据的构造函数及相关逻辑
 namespace Bind
 {
 	class StorageTexture2DArray :public AbstractTexture
 	{
 	public:
-		StorageTexture2DArray(const std::string& name, const OGL_TEXTURE2D_DESC& desc, GLuint unit);
+		StorageTexture2DArray(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit);
 		~StorageTexture2DArray() = default;
 
 		void Bind() noxnd override;
 		void UnBind() noxnd override;
 
-		static std::shared_ptr<StorageTexture2DArray> Resolve(const std::string& name, const OGL_TEXTURE2D_DESC& desc, GLuint unit);
-		static std::string GenerateUID(const std::string& name, const OGL_TEXTURE2D_DESC& desc, GLuint unit);
+		static std::shared_ptr<StorageTexture2DArray> Resolve(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit);
+		static std::string GenerateUID(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit);
 		
 		std::string GetUID() const noexcept override;
 		std::type_index GetTypeInfo() const noexcept override;
@@ -34,5 +35,7 @@ namespace Bind
 	private:
 		GLboolean m_is_layered = GL_TRUE;
 		GLint m_layer = 0;
+
+		std::string m_image_name;
 	};
 }

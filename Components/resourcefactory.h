@@ -20,6 +20,8 @@ public:
 
 	static std::shared_ptr<AbstractResource> CreateBuffer(const std::string& name, size_t size, GLbitfield flags = 0) noxnd;
 	static std::shared_ptr<AbstractResource> CreateTexture2D(const std::string& name, const OGL_TEXTURE2D_DESC& desc, unsigned int miplevels = 1) noxnd;
+	// TextureBuffer使用该函数创建texture对象，不需要纹理参数和mipmap
+	static std::shared_ptr<AbstractResource> CreateTexture2D(const std::string& name, GLenum data_format) noxnd;
 	static std::shared_ptr<AbstractResource> CreateRenderBuffer(const std::string& name, GLenum internal_format, unsigned int width, unsigned int height, 
 		unsigned int sample = 1) noxnd;
 
@@ -36,6 +38,7 @@ public:
 	void SetDebugName(GLenum target, const std::string& tag) noxnd;
 
 	inline std::string ResourceName() const noexcept { return m_name; }
+	inline GLuint GetResource() const noexcept { return m_resource; }
 
 protected:
 	AbstractResource(const std::string& name);
@@ -52,9 +55,10 @@ public:
 
 	void Bind(GLenum target) noxnd;
 	void BindBase(GLenum target, unsigned int binding_point) noxnd;
+	void UnBind(GLenum target) noxnd;
 	void Storage(size_t size, GLbitfield flags) noxnd;
 	void UpdateCopy(size_t size, size_t offset, const void* data) noxnd;
-	void UpdataMap(size_t size, size_t offset, const void* data) noxnd;
+	void UpdateMap(size_t size, size_t offset, const void* data) noxnd;
 	void MapRange(size_t offset, size_t length, GLbitfield flags = 0) noxnd;
 	bool UnMapRange() noxnd;
 	inline GLbitfield StorageFlags() const noexcept { return m_storage_flags; };

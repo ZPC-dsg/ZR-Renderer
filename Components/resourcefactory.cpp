@@ -16,6 +16,14 @@ std::shared_ptr<AbstractResource> ResourceFactory::CreateTexture2D(const std::st
 	return texture2D;
 }
 
+std::shared_ptr<AbstractResource> ResourceFactory::CreateTexture2D(const std::string& name, GLenum data_format) noxnd
+{
+	std::shared_ptr<RawTexture2D> texture2D = std::shared_ptr<RawTexture2D>(new RawTexture2D(name, GL_TEXTURE_BUFFER));
+	texture2D->m_desc = {};
+	texture2D->m_desc.internal_format = data_format;
+	return texture2D;
+}
+
 std::shared_ptr<AbstractResource> ResourceFactory::CreateRenderBuffer(const std::string& name, GLenum internal_format, 
 	unsigned int width, unsigned int height, unsigned int sample) noxnd {
 	std::shared_ptr<RawRenderBuffer> renderbuffer = std::shared_ptr<RawRenderBuffer>(new RawRenderBuffer(name, internal_format));
@@ -53,6 +61,11 @@ void RawBuffer::BindBase(GLenum target, unsigned int binding_point) noxnd {
 	glBindBufferBase(target, binding_point, m_resource);
 }
 
+void RawBuffer::UnBind(GLenum target) noxnd
+{
+	glBindBuffer(target, 0);
+}
+
 void RawBuffer::Storage(size_t size, GLbitfield flags) noxnd {
 	glNamedBufferStorage(m_resource, size, NULL, flags);
 	m_storage_flags = flags;
@@ -62,7 +75,7 @@ void RawBuffer::UpdateCopy(size_t size, size_t offset, const void* data) noxnd {
 	glNamedBufferSubData(m_resource, offset, size, data);
 }
 
-void RawBuffer::UpdataMap(size_t size, size_t offset, const void* data) noxnd {
+void RawBuffer::UpdateMap(size_t size, size_t offset, const void* data) noxnd {
 	if ((!HasFlag(GL_DYNAMIC_STORAGE_BIT)) || !HasFlag(GL_MAP_WRITE_BIT)) {
 		return;
 	}

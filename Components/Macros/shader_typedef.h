@@ -90,6 +90,35 @@ struct IsVariantMember;
 template<class T, class... ALL_V>
 struct IsVariantMember<T, std::variant<ALL_V...>> : public std::disjunction<std::is_same<T, ALL_V>...> {};
 
+// 需要用到什么类型的时候再添加
+#define GPU_TYPE_MAPPER \
+	X(GL_R8UI, GL_RED, GL_UNSIGNED_INT, 1) \
+	X(GL_R16UI, GL_RED, GL_UNSIGNED_INT, 2) \
+	X(GL_R32UI, GL_RED, GL_UNSIGNED_INT, 4)
+
+template<GLenum> struct GPUTypeMapper { static constexpr bool is_valid = false; };
+
+#define X(GPU_TYPE, CPU_TYPE, DATA_TYPE, SIZE) \
+	template<> \
+	struct GPUTypeMapper<GPU_TYPE> \
+	{ \
+		static constexpr bool is_valid = true; \
+		\
+		static constexpr GLenum cpu_type = CPU_TYPE; \
+		static constexpr GLenum data_type = DATA_TYPE; \
+		static constexpr size_t pixel_size = SIZE; \
+		static constexpr const char* gpu_type_name = #GPU_TYPE; \
+		static constexpr const char* cpu_type_name = #CPU_TYPE; \
+		static constexpr const char* data_type_name = #DATA_TYPE; \
+	};
+
+GPU_TYPE_MAPPER
+#undef X
+
 #ifndef ENABLE_SHADER_TYPE_GENERATOR
 #undef TYPE_GENERATOR
+#endif
+
+#ifndef ENABLE_GPU_TYPE_MAPPER
+#undef GPU_TYPE_MAPPER
 #endif
