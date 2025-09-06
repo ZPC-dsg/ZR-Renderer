@@ -5,24 +5,8 @@ in vec4 color;
 layout (early_fragment_tests) in;
 
 layout (binding = 0, r32ui) uniform uimage2D head_index_image;
+layout (binding = 1, rgba32ui) uniform imageBuffer list_buffer;
 layout (binding = 0, offset = 0) uniform atomic_uint node_counter;
-
-struct PixelData
-{
-    uint pixel_color;
-    float pixel_depth;
-};
-
-struct Node 
-{
-    PixelData data;
-    uint next_index;
-};
-
-layout (std430, binding = 1) buffer PixelDataBuffer
-{
-    Node nodes[];
-};
 
 uint PackColor(vec4 inColor) 
 {
@@ -59,10 +43,11 @@ void main()
 
     uint oldStartOffset = imageAtomicExchange(head_index_image, ivec2(gl_FragCoord.xy), pixel_count);
 
-    Node node;
-    node.data.pixel_color = PackColor(color);
-    node.data.pixel_depth = gl_FragCoord.z;
-    node.next_index = oldStartOffset;
+    uvec4 item;
+    item.x = oldStartOffset;
+    item.y = PackColor(color);
+    item.z = floatBitsToUint(gl_FragCoord.z);
+    item.w = 0;
 
-    nodes[pixel_count] = node;
+    imageStore(list_buffer, pixel_count, item);
 }
