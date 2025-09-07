@@ -35,7 +35,7 @@ namespace DrawItems {
 		m_texcoords[0][3] = glm::vec2(0, 1);
 
 		m_indices = {
-			1,2,0,0,2,3
+			0,1,2,2,3,0
 		};
 
 		m_instance_data = instance_data;

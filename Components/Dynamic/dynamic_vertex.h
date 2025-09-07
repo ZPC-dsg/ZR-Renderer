@@ -9,6 +9,35 @@ namespace DrawItems {
 	class Drawable;
 }
 
+#define SIMPLE_GLTYPE_MAPPER \
+	X(GL_FLOAT) \
+	X(GL_FLOAT_VEC2) \
+	X(GL_FLOAT_VEC3) \
+	X(GL_FLOAT_VEC4) \
+	X(GL_DOUBLE) \
+	X(GL_DOUBLE_VEC2) \
+	X(GL_DOUBLE_VEC3) \
+	X(GL_DOUBLE_VEC4) \
+	X(GL_INT) \
+	X(GL_INT_VEC2) \
+	X(GL_INT_VEC3) \
+	X(GL_INT_VEC4) \
+	X(GL_UNSIGNED_INT) \
+	X(GL_UNSIGNED_INT_VEC2) \
+	X(GL_UNSIGNED_INT_VEC3) \
+	X(GL_UNSIGNED_INT_VEC4) \
+	X(GL_BOOL) \
+	X(GL_BOOL_VEC2) \
+	X(GL_BOOL_VEC3) \
+	X(GL_BOOL_VEC4) \
+	X(GL_FLOAT_MAT2) \
+	X(GL_FLOAT_MAT3) \
+	X(GL_FLOAT_MAT4) \
+	X(GL_DOUBLE_MAT2) \
+	X(GL_DOUBLE_MAT3) \
+	X(GL_DOUBLE_MAT4)
+
+
 namespace Dynamic {
 	namespace Dvtx {
 		class VertexLayout {
@@ -16,8 +45,9 @@ namespace Dynamic {
 			template<template<GLenum> class F, typename... Args>
 			static constexpr auto Bridge(GLenum type, std::string name, Args&&... args) noxnd {
 				switch (type) {
-#define X(Type,GLSLType,Code,Row,Col,CType,EleType) case GLSLType : return F<GLSLType>::Exec(name, std::forward<Args>(args)... );
-					TYPE_GENERATOR
+#define X(GLSLType) case GLSLType : return F<GLSLType>::Exec(name, std::forward<Args>(args)... );
+
+					SIMPLE_GLTYPE_MAPPER
 #undef X
 				}
 				assert("Invalid element type!" && false);//Ò»¶¨´¥·¢¶ÏÑÔ
@@ -179,6 +209,8 @@ namespace Dynamic {
 		}
 	}
 }
+
+#undef SIMPLE_GLTYPE_MAPPER
 
 #ifndef DVTX_SOURCE_FILE
 #undef ENABLE_SHADER_TYPE_GENERATOR

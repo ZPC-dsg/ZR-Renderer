@@ -1,10 +1,12 @@
 #pragma once
 
-#include <Macros/conditional_noexcept.h>
 #include <Macros/shader_typedef.h>
-#include <shader.h>
+#include <Macros/conditional_noexcept.h>
 
-#include <glad/glad.h>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 #include <unordered_map>
 #include <optional>
 

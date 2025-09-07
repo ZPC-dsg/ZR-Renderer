@@ -148,6 +148,11 @@ namespace Dynamic {
 				}
 			}
 
+			if (!attribs.size())
+			{
+				return {};
+			}
+
 			std::ranges::sort(attribs, [](const UniformAttrib& lhs, const UniformAttrib& rhs)->bool {return lhs.name < rhs.name; });
 
 			std::unordered_map<std::string, std::vector<UniformAttrib>> res;

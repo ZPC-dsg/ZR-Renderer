@@ -1,4 +1,4 @@
-#define ENABLE_SHADER_TYPE_GENERATOR
+#define DVTX_SOURCE_FILE
 
 #include <Dynamic/dynamic_vertex.h>
 

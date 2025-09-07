@@ -11,6 +11,7 @@ namespace SceneGraph
 namespace Bind
 {
 	class ShaderProgram;
+	class ImageTexture2D;
 }
 
 namespace RTREffects
@@ -34,12 +35,16 @@ namespace RTREffects
 		void render_OIT();
 		void composite();
 
+		void prepare_test();
+
 	private:
 		std::shared_ptr<SceneGraph::ModelProxy> m_proxy;
 		std::shared_ptr<SceneGraph::DrawableProxy> m_transparent_proxy;
 
 		std::shared_ptr<Bind::ShaderProgram> m_opaque_shader;
 		std::shared_ptr<Bind::ShaderProgram> m_transparent_shader;
+
+		std::shared_ptr<Bind::ImageTexture2D> m_test_texture;
 
 	private:
 		int m_sample_count = 4;

@@ -1,11 +1,11 @@
 #pragma once
 
+#include <Bindables/inputlayout.h>
+
 #include <memory>
 #include <vector>
 #include <functional>
 #include <glad/glad.h>
-
-#include <Bindables/inputlayout.h>
 
 #define VERTEX_GENERATOR \
 	X(Position, m_positions, glm::vec3) \

@@ -11,6 +11,7 @@
 #include <drawableloader.h>
 #include <Bindables/shaderprogram.h>
 #include <Common/random_generator.h>
+#include <Common/render_helper.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -134,6 +135,11 @@ namespace RTREffects
 		m_transparent_proxy->AddRootVertexRule(instruction);
 
 		m_transparent_proxy->Cook();
+	}
+
+	void OIT::prepare_test()
+	{
+		m_test_texture = Bind::ImageTexture2D::Resolve("test_texture", "girl.jpg", {}, 0);
 	}
 
 	void OIT::prepare_OITdata()

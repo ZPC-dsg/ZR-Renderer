@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Bindables/includer.h>
 #include <Dynamic/dynamic_vertex.h>
+#include <Bindables/includer.h>
 #include <resourcefactory.h>
 
 namespace Bind {

@@ -1,7 +1,8 @@
 #include <init.h>
+#include <Common/render_helper.h>
+
 #include <iostream>
 #include <GL/gl.h>
-#include <Dynamic/shader_reflection.h>
 
 bool globalSettings::window_valid = true;
 unsigned int globalSettings::screen_width = 1280;
@@ -68,6 +69,7 @@ void init() {
     glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &globalSettings::max_anisotropy);
 
     Dynamic::Dsr::ShaderReflection::InitializeSizeMap();
+    Common::RenderHelper::Initialize();
 }
 
 void fin() {

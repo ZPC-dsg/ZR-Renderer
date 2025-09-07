@@ -3,9 +3,7 @@
 #define ENABLE_SHADER_TYPE_GENERATOR
 
 #include <Dynamic/shader_reflection.h>
-#include <Macros/shader_typedef.h>
 
-#include <variant>
 #include <functional>
 
 namespace Dynamic {

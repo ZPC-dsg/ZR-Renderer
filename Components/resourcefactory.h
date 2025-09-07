@@ -4,7 +4,6 @@
 #include <Macros/conditional_noexcept.h>
 #include <ogl_structures.h>
 
-#include <glad/glad.h>
 #include <memory>
 #include <string>
 #include <array>

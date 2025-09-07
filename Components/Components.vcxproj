@@ -181,6 +181,7 @@
     <ClInclude Include="buffer.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="Common\random_generator.h" />
+    <ClInclude Include="Common\render_helper.h" />
     <ClInclude Include="computeshader.h" />
     <ClInclude Include="cpuTimer.h" />
     <ClInclude Include="drawableloader.h" />
@@ -248,6 +249,7 @@
     <ClCompile Include="buffer.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="Common\random_generator.cpp" />
+    <ClCompile Include="Common\render_helper.cpp" />
     <ClCompile Include="computeshader.cpp" />
     <ClCompile Include="cpuTimer.cpp" />
     <ClCompile Include="drawableloader.cpp" />

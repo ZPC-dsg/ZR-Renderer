@@ -67,12 +67,12 @@ namespace Bind {
     GLuint ShaderObject::Resolve(ShaderObject::ShaderType type, const std::string& tag, const std::string& proj, const std::string& file) {
         switch (type) {
 #define X(Type,Member) \
-	case Type: \
-        if(!Member.contains(tag)) \
-		    Member[tag] = std::make_shared<ShaderObject>(type, tag, proj, file); \
-        else \
-            assert("Name has been occupied!" && false); \
-        return *Member[tag];
+	    case Type: \
+        { \
+            if(!Member.contains(tag)) \
+		        Member[tag] = std::make_shared<ShaderObject>(type, tag, proj, file); \
+            return *Member[tag]; \
+        }
 
             SWITCH_TYPE
 
