@@ -2,6 +2,10 @@
 
 namespace Tools {
 	std::string get_solution_dir() {
+		
+#ifdef _DEBUG
+		std::string solutionDir = "E:/codes/openGL/ZRRenderer/";
+#else
 		char* path = NULL;
 		path = _getcwd(NULL, 1);
 		std::string str1(path);
@@ -9,6 +13,7 @@ namespace Tools {
 		std::string solutionDir = str1.substr(0, pos - 5);  // 返回解决方案的路径
 		delete path;
 		path = nullptr;
+#endif
 
 		return solutionDir;
 	}

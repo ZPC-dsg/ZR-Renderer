@@ -52,8 +52,8 @@ std::shared_ptr<SceneGraph::ModelProxy> AssimpLoader::LoadModel(const std::strin
 	);
 
 	if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode) {
-		std::string error_code = "Failed to load assimp model file: " + path;
-		assert("error_code" && false);
+		LOGE("Failed to load assimp model file: {}.", path.c_str());
+		assert(false);
 		return nullptr;
 	}
 
