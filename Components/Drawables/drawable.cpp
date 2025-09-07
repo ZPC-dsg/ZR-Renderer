@@ -20,7 +20,7 @@ namespace DrawItems {
 	}
 
 	//attribs已经按照location序排列好，并且要求attribs的location从0开始连续递增，instruction中元素和attribs一一对应
-	void Drawable::GenerateVAO(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<VertexType> instruction, const std::vector<Dynamic::Dsr::VertexAttrib>& instance_attribs) {
+	void Drawable::GenerateVAO(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<VertexType> instruction) {
 		if (!CheckAttribExists(instruction)) {
 			std::string error_code = "Vertex Attributes do not match for drawable: " + m_name;
 			assert(error_code.c_str() && false);
@@ -29,10 +29,27 @@ namespace DrawItems {
 
 		LOGI("Generating VAO for drawable {}...", m_name.c_str())
 
+		std::vector<Dynamic::Dsr::VertexAttrib> vert_attribs;
+		std::vector<Dynamic::Dsr::VertexAttrib> instance_attribs;
+		std::vector<size_t> vert_indices;
+		for (size_t i = 0; i < attribs.size(); i++)
+		{
+			if (instruction[i] == VertexType::InstanceData)
+			{
+				instance_attribs.push_back(attribs[i]);
+			}
+			else
+			{
+				vert_attribs.push_back(attribs[i]);
+				vert_indices.push_back(i);
+			}
+		}
+
 		Dynamic::Dvtx::CPUVertexBuffer vert(attribs, m_positions.size());
 		int offset = 0;
 		int tex_offset = 0, color_offset = 0;
-		for (auto type : instruction) {
+		for (size_t ind : vert_indices) {
+			auto& type = instruction[ind];
 			switch (type) {
 #define X(Enum, Member, Type) \
 			case VertexType::Enum: \
@@ -58,9 +75,9 @@ namespace DrawItems {
 		std::shared_ptr<Bind::VertexBuffer> instance_buffer = nullptr;
 		if (m_instance_data.size())
 		{
-			Dynamic::Dvtx::CPUVertexBuffer instance_vert(instance_attribs, m_instance_data[0].second.size()); // 假设所有的instance的divisor都是1
+			Dynamic::Dvtx::CPUVertexBuffer instance_vert(instance_attribs, m_instance_data[0].second.size(), Dynamic::Dvtx::VertexLayout::InputClassification::PerInstance); // 假设所有的instance的divisor都是1
 			auto data = m_instance_data;
-			instance_vert.InitializeData(0, data);
+			instance_vert.InitializeVectorData(0, std::move(data));
 			
 			instance_buffer = std::make_shared<Bind::VertexBuffer>(m_name + "_vertex_instanced", instance_vert);
 		}

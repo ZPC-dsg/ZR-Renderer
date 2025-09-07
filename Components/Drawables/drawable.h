@@ -23,7 +23,8 @@ namespace DrawItems {
 		VERTEX_GENERATOR
 #undef X
 		Texcoord,
-		VertexColor
+		VertexColor,
+		InstanceData
 	};
 
 	std::string vertex_type_to_string(VertexType type);
@@ -40,7 +41,7 @@ namespace DrawItems {
 
 		void Draw();
 
-		void GenerateVAO(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<VertexType> instruction, const std::vector<Dynamic::Dsr::VertexAttrib>& instance_attribs = {});
+		void GenerateVAO(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<VertexType> instruction);
 
 	protected:
 		std::string m_name;

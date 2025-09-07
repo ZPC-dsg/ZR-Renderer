@@ -36,6 +36,39 @@ namespace Bind {
 		gen_framebuffer(mips, slices, false, depthstencil->is_depth_only());
 	}
 
+	RenderTarget::RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractResource> depthstencil)
+		:m_tag(tag)
+	{
+		assert(depthstencil);
+		auto depth_stencil = std::static_pointer_cast<RawRenderBuffer>(depthstencil);
+
+		if (rendertargets.size())
+		{
+			auto desc = rendertargets[0]->get_description();
+			m_width = desc.width;
+			m_height = desc.height;
+			m_samples = desc.samplecount;
+			m_internal_format = desc.internal_format;
+		}
+		else
+		{
+			m_width = depth_stencil->GetWidth();
+			m_height = depth_stencil->GetHeight();
+			m_samples = 1;
+			m_internal_format = GL_RGBA8;
+		}
+
+		m_rendertargets.reserve(rendertargets.size());
+		for (auto r : rendertargets) {
+			m_rendertargets.push_back(r->m_resource);
+		}
+		m_depthstencil = depthstencil;
+
+		std::vector<unsigned int> slices(m_rendertargets.size() + 1, 0);
+		std::vector<unsigned int> mips(m_rendertargets.size() + 1, 0);
+		gen_framebuffer(mips.data(), slices.data(), true, depth_stencil->IsDepthOnly());
+	}
+
 	RenderTarget::RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, const std::string& rb_tag, bool depth_only)
 		:m_tag(tag), m_width(rendertargets[0]->get_description().width), m_height(rendertargets[0]->get_description().height),
 		m_samples(rendertargets[0]->get_description().samplecount), m_internal_format(rendertargets[0]->get_description().internal_format)
@@ -138,9 +171,17 @@ namespace Bind {
 
 	void RenderTarget::Bind() noxnd {
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
-		std::vector<unsigned int> attachments(m_rendertargets.size());
-		std::iota(attachments.begin(), attachments.end(), GL_COLOR_ATTACHMENT0);
-		glDrawBuffers(m_rendertargets.size(), attachments.data());
+		if (m_rendertargets.size())
+		{
+			std::vector<unsigned int> attachments(m_rendertargets.size());
+			std::iota(attachments.begin(), attachments.end(), GL_COLOR_ATTACHMENT0);
+			glDrawBuffers(m_rendertargets.size(), attachments.data());
+		}
+		else
+		{
+			glDrawBuffer(GL_NONE);
+			glReadBuffer(GL_NONE);
+		}
 	}
 
 	void RenderTarget::UnBind() noxnd {
@@ -154,6 +195,11 @@ namespace Bind {
 	std::shared_ptr<RenderTarget> RenderTarget::Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractTexture> depthstencil,
 		unsigned int* mips, unsigned int* slices) {
 		return BindableResolver::Resolve<RenderTarget>(tag, rendertargets, depthstencil, mips, slices);
+	}
+
+	std::shared_ptr<RenderTarget> RenderTarget::Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractResource> depthstencil)
+	{
+		return BindableResolver::Resolve<RenderTarget>(tag, rendertargets, depthstencil);
 	}
 
 	std::shared_ptr<RenderTarget> RenderTarget::Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, const std::string& rb_tag, bool depth_only) {

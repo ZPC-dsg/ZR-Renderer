@@ -5,6 +5,8 @@
 #include <Bindables/rendertarget.h>
 #include <Bindables/storagetexture2D.h>
 #include <Bindables/storagetexture2Darray.h>
+#include <Bindables/texturebuffer.h>
+#include <Bindables/atomicounter.h>
 #include <assimploader.h>
 #include <drawableloader.h>
 #include <Bindables/shaderprogram.h>
@@ -12,7 +14,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace OITEffects
+namespace RTREffects
 {
 	OIT::OIT(const std::string& name)
 		:Utils(name)
@@ -49,9 +51,9 @@ namespace OITEffects
 	{
 		m_proxy = AssimpLoader::LoadModel("Sponza", "sponza.obj", m_main_scene);
 
-		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "vertex", "test", "model_test.vert");
-		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "fragment", "test", "model_test.frag");
-		m_opaque_shader = Bind::ShaderProgram::Resolve("shader", std::vector<GLuint>{vertex, fragment});
+		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "opaque_vertex", "test", "model_test.vert");
+		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "opaque_fragment", "test", "model_test.frag");
+		m_opaque_shader = Bind::ShaderProgram::Resolve("opaque_shader", std::vector<GLuint>{vertex, fragment});
 		m_proxy->AddRootBindable(m_opaque_shader);
 
 		// 现在不考虑屏幕尺寸变化
@@ -73,7 +75,7 @@ namespace OITEffects
 	{
 		GeometryParameter param;
 		param.m_name = "transparent_cubes";
-		
+
 		auto& instance_data = param.m_instance_datas;
 
 		auto translate_data = Common::UniformGenerator::Generate({ -30.0f, -30.0f, -30.0f }, { 30.0f, 30.0f, 30.0f }, 100);
@@ -102,7 +104,36 @@ namespace OITEffects
 
 		OGL_TEXTURE2D_DESC desc;
 		desc.target = GL_TEXTURE_2D;
-		// auto start_offset_image = Bind::StorageTexture2D::Resolve()
+		desc.width = (size_t)globalSettings::screen_width;
+		desc.height = (size_t)globalSettings::screen_height;
+		desc.internal_format = GL_R32UI;
+		desc.cpu_format = GL_RED;
+		desc.data_type = GL_UNSIGNED_INT;
+		desc.access_mode = GL_WRITE_ONLY;
+		std::vector<uint32_t> initial_val(desc.width * desc.height, 0xFFFFFFFF);
+		auto start_offset_image = Bind::StorageTexture2D::Resolve("head_offset_image", desc, 0, (void*)initial_val.data());
+
+		size_t list_size = desc.width * desc.height * 4 * sizeof(uint32_t) * 4;
+		auto list_buffer = Bind::TextureBuffer::Resolve("list_texture_buffer", list_size, GL_RGBA32F, 0, 1);
+
+		std::vector<GLuint> data(1, 0);
+		auto counter = Bind::AtomicCounter::Resolve("list_counter", data, 0);
+
+		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "transparent_vertex", "OIT", "transparent.vert");
+		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "transparent_fragment", "OIT", "transparent.frag");
+		m_transparent_shader = Bind::ShaderProgram::Resolve("transparent_shader", std::vector<GLuint>{vertex, fragment});
+
+		auto opaque_render_target = Bind::RenderTarget::Resolve("opaque_rendertarget", globalSettings::screen_width, globalSettings::screen_height);
+		auto opaque_depth = opaque_render_target->get_depth_stencil();
+		auto trans_render_target = Bind::RenderTarget::Resolve("transparent_render_target", {}, opaque_depth);
+		
+		m_transparent_proxy->AddRootBindable(start_offset_image).AddRootBindable(list_buffer).AddRootBindable(counter).AddRootBindable(m_transparent_shader).
+			AddRootBindable(trans_render_target);
+
+		std::vector<DrawItems::VertexType> instruction{ DrawItems::VertexType::Position,DrawItems::VertexType::InstanceData,DrawItems::VertexType::InstanceData };
+		m_transparent_proxy->AddRootVertexRule(instruction);
+
+		m_transparent_proxy->Cook();
 	}
 
 	void OIT::prepare_OITdata()

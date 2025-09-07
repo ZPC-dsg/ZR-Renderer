@@ -176,7 +176,7 @@ namespace SceneGraph {
 		m_transform.SetScale(scale);
 	}
 
-	void EntityNode::CookNode(std::pair<std::vector<Dynamic::Dsr::VertexAttrib>, std::vector<Dynamic::Dsr::VertexAttrib>>& attribs, std::vector<DrawItems::VertexType>& instruction,
+	void EntityNode::CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
 		std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path) {
 		CookVertex(attribs, instruction);
 		CookTexture(textures, rel_path);
@@ -188,9 +188,9 @@ namespace SceneGraph {
 		}
 	}
 
-	void EntityNode::CookVertex(const std::pair<std::vector<Dynamic::Dsr::VertexAttrib>, std::vector<Dynamic::Dsr::VertexAttrib>>& attribs, const std::vector<DrawItems::VertexType>& instruction) {
+	void EntityNode::CookVertex(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, const std::vector<DrawItems::VertexType>& instruction) {
 		for (auto m : m_drawables) {
-			m->GenerateVAO(attribs.first, instruction, attribs.second);
+			m->GenerateVAO(attribs, instruction);
 		}
 	}
 
@@ -314,7 +314,13 @@ namespace SceneGraph {
 	void ControlNode::StartCooking(const std::string& rel_path) {
 		auto attribs = Dynamic::Dsr::ShaderReflection::GetVertexAttribs(
 			std::static_pointer_cast<Bind::ShaderProgram>(GetBindableUnique(typeid(Bind::ShaderProgram)))->get_program());
-		assert(attribs.first.size() == m_vertex_instruction.size());
+		if (attribs.size() != m_vertex_instruction.size())
+		{
+			LOGE("Vertex attribs specified do not match the amount of vertex attribs in vertex shader!Attrib count specified: {}.Attrib count in vertex shader: {}.",
+				std::to_string(m_vertex_instruction.size()).c_str(), std::to_string(attribs.size()).c_str());
+			assert(false);
+		}
+
 		for (Node* child : m_children) {
 			child->CookNode(attribs, m_vertex_instruction, m_texture_vector, rel_path);
 		}
@@ -329,13 +335,13 @@ namespace SceneGraph {
 		shader->UnBind();
 	}
 
-	void ControlNode::CookNode(std::pair<std::vector<Dynamic::Dsr::VertexAttrib>, std::vector<Dynamic::Dsr::VertexAttrib>>& attribs, std::vector<DrawItems::VertexType>& instruction,
+	void ControlNode::CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
 		std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path) {
 		if (HasShader() && HasVertexConfiguration()) {
 			auto new_attribs = Dynamic::Dsr::ShaderReflection::GetVertexAttribs(
 				std::static_pointer_cast<Bind::ShaderProgram>(GetBindableUnique(typeid(Bind::ShaderProgram)))->get_program());
 			std::string error_code = "Vertex configuration does not match properly!Adjust for control node " + m_name + " needed.";
-			assert(error_code.c_str() && attribs.first.size() == m_vertex_instruction.size());
+			assert(error_code.c_str() && attribs.size() == m_vertex_instruction.size());
 			for (Node* child : m_children) {
 				child->CookNode(new_attribs, m_vertex_instruction, m_texture_vector.size() ? m_texture_vector : textures, rel_path);
 			}

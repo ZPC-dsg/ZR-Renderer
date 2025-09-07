@@ -92,8 +92,8 @@ struct IsVariantMember<T, std::variant<ALL_V...>> : public std::disjunction<std:
 
 // 需要用到什么类型的时候再添加
 #define GPU_TYPE_MAPPER \
-	X(GL_R8UI, GL_RED, GL_UNSIGNED_INT, 1) \
-	X(GL_R16UI, GL_RED, GL_UNSIGNED_INT, 2) \
+	X(GL_R8UI, GL_RED, GL_UNSIGNED_BYTE, 1) \
+	X(GL_R16UI, GL_RED, GL_UNSIGNED_SHORT, 2) \
 	X(GL_R32UI, GL_RED, GL_UNSIGNED_INT, 4)
 
 template<GLenum> struct GPUTypeMapper { static constexpr bool is_valid = false; };

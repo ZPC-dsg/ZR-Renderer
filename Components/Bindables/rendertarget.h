@@ -21,9 +21,11 @@ namespace Bind {
 
 	class RenderTarget :public Bindable {
 	public:
+		// TODO : m_width和m_height成员在输入参数rendertarget大小为0时初始化逻辑有问题，需要修正
 		RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractTexture> depthstencil);
 		RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractTexture> depthstencil,
 			unsigned int* mips, unsigned int* slices);
+		RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractResource> depthstencil);
 		RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, const std::string& rb_tag, bool depth_only = true);
 		RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, const std::string& rb_tag,
 			unsigned int* mips, unsigned int* slices, bool depth_only = true);
@@ -74,6 +76,7 @@ namespace Bind {
 		static std::shared_ptr<RenderTarget> Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractTexture> depthstencil);
 		static std::shared_ptr<RenderTarget> Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractTexture> depthstencil,
 			unsigned int* mips, unsigned int* slices);
+		static std::shared_ptr<RenderTarget> Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractResource> depthstencil);
 		static std::shared_ptr<RenderTarget> Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, const std::string& rb_tag, bool depth_only = true);
 		static std::shared_ptr<RenderTarget> Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, const std::string& rb_tag,
 			unsigned int* mips, unsigned int* slices, bool depth_only = true);

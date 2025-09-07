@@ -41,9 +41,8 @@ namespace Dynamic {
 			ELEMENT_SIZE
 		}
 
-		std::pair<std::vector<VertexAttrib>, std::vector<VertexAttrib>> ShaderReflection::GetVertexAttribs(GLuint program) noxnd {
+		std::vector<VertexAttrib> ShaderReflection::GetVertexAttribs(GLuint program) noxnd {
 			std::vector<VertexAttrib> attribs;
-			std::vector<VertexAttrib> instance_attribs;
 
 			GLint active_attribs;
 			glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &active_attribs);
@@ -59,23 +58,14 @@ namespace Dynamic {
 				glGetActiveAttrib(program, i, buff_size, &length, &element.size, &element.type, name);
 				element.name = std::string(name);
 				element.location = glGetAttribLocation(program, name);
-				glGetVertexAttribIuiv(element.location, GL_VERTEX_ATTRIB_ARRAY_DIVISOR, &element.m_divisor);
-
-				if (element.m_divisor)
-				{
-					instance_attribs.push_back(element);
-				}
-				else
-				{
-					attribs.push_back(element);
-				}
+					
+				attribs.push_back(element);
 			}
 
 			//按location从小到大排列
 			std::ranges::sort(attribs, [](const VertexAttrib& lhs, const VertexAttrib& rhs)->bool {return lhs.location < rhs.location; });
-			std::ranges::sort(instance_attribs, [](const VertexAttrib& lhs, const VertexAttrib& rhs)->bool {return lhs.location < rhs.location; });
 
-			return std::make_pair(attribs, instance_attribs);
+			return attribs;
 		}
 
 		std::unordered_map<std::string, std::vector<ConstantAttrib>> ShaderReflection::GetConstantAttribs(GLuint program) noxnd {
@@ -194,6 +184,7 @@ namespace Dynamic {
 			return tmp;
 		}
 
+		// TODO : https://registry.khronos.org/OpenGL-Refpages/gl4/html/glGetActiveUniform.xhtml中包含了所有type有关信息（可能也不全），之后补全这个列表
 		bool ShaderReflection::is_other_uniform_type(GLenum type) noexcept {
 			switch (type) {
 			case GL_SAMPLER_1D:
@@ -232,6 +223,16 @@ namespace Dynamic {
 			case GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY:
 			case GL_UNSIGNED_INT_SAMPLER_BUFFER:
 			case GL_UNSIGNED_INT_SAMPLER_2D_RECT:
+			case GL_UNSIGNED_INT_ATOMIC_COUNTER:
+			case GL_IMAGE_BUFFER:
+			case GL_INT_IMAGE_BUFFER:
+			case GL_UNSIGNED_INT_IMAGE_BUFFER:
+			case GL_INT_IMAGE_1D:
+			case GL_INT_IMAGE_2D:
+			case GL_INT_IMAGE_3D:
+			case GL_UNSIGNED_INT_IMAGE_1D:
+			case GL_UNSIGNED_INT_IMAGE_2D:
+			case GL_UNSIGNED_INT_IMAGE_3D:
 				return true;
 			default:
 				return false;

@@ -3,9 +3,10 @@
 
 namespace Bind
 {
-	AtomicCounter::AtomicCounter(const std::string& counter_name, const std::string& buffer_name, const std::vector<GLuint>& initial_value, GLuint binding)
+	AtomicCounter::AtomicCounter(const std::string& counter_name, const std::vector<GLuint>& initial_value, GLuint binding)
 		:m_counter_name(counter_name), m_binding(binding), m_initial_value(initial_value)
 	{
+		std::string buffer_name = counter_name + "_buffer#";
 		m_buffer = std::static_pointer_cast<RawBuffer>(ResourceFactory::CreateBuffer(buffer_name, initial_value.size() * sizeof(GLuint), GL_MAP_READ_BIT | GL_MAP_WRITE_BIT));
 		m_buffer->BindBase(GL_ATOMIC_COUNTER_BUFFER, binding);
 
@@ -23,20 +24,20 @@ namespace Bind
 		m_buffer->BindBase(GL_ATOMIC_COUNTER_BUFFER, 0);
 	}
 
-	std::shared_ptr<AtomicCounter> AtomicCounter::Resolve(const std::string& counter_name, const std::string& buffer_name, const std::vector<GLuint>& initial_value, GLuint binding)
+	std::shared_ptr<AtomicCounter> AtomicCounter::Resolve(const std::string& counter_name, const std::vector<GLuint>& initial_value, GLuint binding)
 	{
-		return BindableResolver::Resolve<AtomicCounter>(counter_name, buffer_name, initial_value, binding);
+		return BindableResolver::Resolve<AtomicCounter>(counter_name, initial_value, binding);
 	}
 
-	std::string AtomicCounter::GenerateUID(const std::string& counter_name, const std::string& buffer_name, const std::vector<GLuint>& initial_value, GLuint binding)
+	std::string AtomicCounter::GenerateUID(const std::string& counter_name, const std::vector<GLuint>& initial_value, GLuint binding)
 	{
 		using namespace std::string_literals;
-		return typeid(AtomicCounter).name() + "#"s + counter_name + "#"s + buffer_name;
+		return typeid(AtomicCounter).name() + "#"s + counter_name + "#"s + std::to_string(binding);
 	}
 
 	std::string AtomicCounter::GetUID() const noexcept
 	{
-		return GenerateUID(m_counter_name, m_buffer->ResourceName(), {}, m_binding);
+		return GenerateUID(m_counter_name, {}, m_binding);
 	}
 
 	std::type_index AtomicCounter::GetTypeInfo() const noexcept

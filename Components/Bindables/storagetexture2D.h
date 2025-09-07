@@ -9,16 +9,16 @@ namespace Bind
 	class StorageTexture2D :public AbstractTexture
 	{
 	public:
-		StorageTexture2D(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit, std::shared_ptr<PixelUnpackBuffer> pub = nullptr);
+		StorageTexture2D(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit, std::shared_ptr<PixelUnpackBuffer> pub);
 		StorageTexture2D(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit, void* data = nullptr);
 		~StorageTexture2D() = default;
 
 		void Bind() noxnd override;
 		void UnBind() noxnd override;
 
-		static std::shared_ptr<StorageTexture2D> Resolve(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit, std::shared_ptr<PixelUnpackBuffer> pub = nullptr);
+		static std::shared_ptr<StorageTexture2D> Resolve(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit, std::shared_ptr<PixelUnpackBuffer> pub);
 		static std::shared_ptr<StorageTexture2D> Resolve(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit, void* data = nullptr);
-		static std::string GenerateUID(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit, std::shared_ptr<PixelUnpackBuffer> pub = nullptr);
+		static std::string GenerateUID(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit, std::shared_ptr<PixelUnpackBuffer> pub);
 		static std::string GenerateUID(const std::string& image_name, const OGL_TEXTURE2D_DESC& desc, GLuint unit, void* data = nullptr);
 
 		std::string GetUID() const noexcept override;

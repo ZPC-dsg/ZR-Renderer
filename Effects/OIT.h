@@ -13,7 +13,7 @@ namespace Bind
 	class ShaderProgram;
 }
 
-namespace OITEffects
+namespace RTREffects
 {
 	class OIT :public Utils
 	{

@@ -16,6 +16,7 @@ std::shared_ptr<AbstractResource> ResourceFactory::CreateTexture2D(const std::st
 	return texture2D;
 }
 
+// 此时无需存储size信息
 std::shared_ptr<AbstractResource> ResourceFactory::CreateTexture2D(const std::string& name, GLenum data_format) noxnd
 {
 	std::shared_ptr<RawTexture2D> texture2D = std::shared_ptr<RawTexture2D>(new RawTexture2D(name, GL_TEXTURE_BUFFER));
@@ -69,6 +70,7 @@ void RawBuffer::UnBind(GLenum target) noxnd
 void RawBuffer::Storage(size_t size, GLbitfield flags) noxnd {
 	glNamedBufferStorage(m_resource, size, NULL, flags);
 	m_storage_flags = flags;
+	m_size = size;
 }
 
 void RawBuffer::UpdateCopy(size_t size, size_t offset, const void* data) noxnd {
@@ -262,7 +264,8 @@ void RawTexture2D::BindSliceAsDepthComponent(GLuint framebuffer, unsigned int sl
 }
 
 bool RawTexture2D::DepthOnly() const noexcept {
-	return m_desc.internal_format == GL_DEPTH_COMPONENT24 || m_desc.internal_format == GL_DEPTH_COMPONENT32 || m_desc.internal_format == GL_DEPTH_COMPONENT32F;
+	return m_desc.internal_format == GL_DEPTH_COMPONENT16 || m_desc.internal_format == GL_DEPTH_COMPONENT24 || m_desc.internal_format == GL_DEPTH_COMPONENT32 ||
+		m_desc.internal_format == GL_DEPTH_COMPONENT32F;
 }
 
 //RenderBuffer
@@ -280,6 +283,9 @@ void RawRenderBuffer::Bind() noxnd {
 }
 
 void RawRenderBuffer::Storage(unsigned int width, unsigned int height, unsigned int sample_count) noxnd {
+	m_width = width;
+	m_height = height;
+
 	if (sample_count == 1) {
 		glNamedRenderbufferStorage(m_resource, m_internal_format, width, height);
 	}
@@ -298,4 +304,10 @@ void RawRenderBuffer::BindAsDepthStencil(GLuint framebuffer) noxnd {
 
 void RawRenderBuffer::BindAsDepthComponent(GLuint framebuffer) noxnd {
 	glNamedFramebufferRenderbuffer(framebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_resource);
+}
+
+bool RawRenderBuffer::IsDepthOnly() const noexcept
+{
+	return m_internal_format == GL_DEPTH_COMPONENT16 || m_internal_format == GL_DEPTH_COMPONENT24 || m_internal_format == GL_DEPTH_COMPONENT32
+		|| m_internal_format == GL_DEPTH_COMPONENT32F;
 }

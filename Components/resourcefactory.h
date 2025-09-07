@@ -71,6 +71,8 @@ private:
 	GLbitfield m_storage_flags = 0;
 	void* m_data_pointer;
 	bool m_is_mapped = false;
+
+	size_t m_size = 0;
 };
 
 class RawTexture2D :public AbstractResource {
@@ -118,11 +120,18 @@ public:
 	void BindAsDepthStencil(GLuint framebuffer) noxnd;
 	void BindAsDepthComponent(GLuint framebuffer) noxnd;
 
+	inline size_t GetWidth() const noexcept { return m_width; }
+	inline size_t GetHeight() const noexcept { return m_height; }
+
+	bool IsDepthOnly() const noexcept;
+
 private:
 	RawRenderBuffer(const std::string& name, GLenum internal_format = GL_DEPTH_COMPONENT24);
 
 private:
 	GLenum m_internal_format;
+	size_t m_width = 0;
+	size_t m_height = 0;
 };
 
 

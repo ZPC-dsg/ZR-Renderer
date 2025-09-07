@@ -8,14 +8,14 @@ namespace Bind
 	class AtomicCounter :public Bindable
 	{
 	public:
-		AtomicCounter(const std::string& counter_name, const std::string& buffer_name, const std::vector<GLuint>& initial_value, GLuint binding);
+		AtomicCounter(const std::string& counter_name, const std::vector<GLuint>& initial_value, GLuint binding);
 		~AtomicCounter() = default;
 
 		void Bind() noxnd override;
 		void UnBind() noxnd override;
 
-		static std::shared_ptr<AtomicCounter> Resolve(const std::string& counter_name, const std::string& buffer_name, const std::vector<GLuint>& initial_value, GLuint binding);
-		static std::string GenerateUID(const std::string& counter_name, const std::string& buffer_name, const std::vector<GLuint>& initial_value, GLuint binding);
+		static std::shared_ptr<AtomicCounter> Resolve(const std::string& counter_name, const std::vector<GLuint>& initial_value, GLuint binding);
+		static std::string GenerateUID(const std::string& counter_name, const std::vector<GLuint>& initial_value, GLuint binding);
 
 		std::string GetUID() const noexcept override;
 		std::type_index GetTypeInfo() const noexcept override;

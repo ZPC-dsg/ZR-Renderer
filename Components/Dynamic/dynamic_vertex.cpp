@@ -157,13 +157,13 @@ namespace Dynamic {
 			m_buffer.resize(m_layout.VertexSize() * vertices);
 		}
 
-		void CPUVertexBuffer::InitializeData(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd
+		void CPUVertexBuffer::InitializeVectorData(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd
 		{
-			m_layout.GetInputSteppingType() == VertexLayout::InputSteppingType::Interleaved ? InitializeInterleaved(offset, std::move(data)) : InitializeContinuous(offset, std::move(data));
+			m_layout.GetInputSteppingType() == VertexLayout::InputSteppingType::Interleaved ? InitializeVectorInterleaved(offset, std::move(data)) : InitializeVectorContinuous(offset, std::move(data));
 			return;
 		}
 
-		void CPUVertexBuffer::InitializeInterleaved(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd
+		void CPUVertexBuffer::InitializeVectorInterleaved(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd
 		{
 			auto item1 = data[0];
 			switch (item1.first)
@@ -194,10 +194,10 @@ namespace Dynamic {
 				return;
 			}
 
-			InitializeInterleaved(offset, std::move(data));
+			InitializeVectorInterleaved(offset, std::move(data));
 		}
 
-		void CPUVertexBuffer::InitializeContinuous(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd
+		void CPUVertexBuffer::InitializeVectorContinuous(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd
 		{
 			auto item1 = data[0];
 			switch (item1.first)
@@ -228,7 +228,7 @@ namespace Dynamic {
 				return;
 			}
 
-			InitializeContinuous(offset, std::move(data));
+			InitializeVectorContinuous(offset, std::move(data));
 		}
 	}
 }

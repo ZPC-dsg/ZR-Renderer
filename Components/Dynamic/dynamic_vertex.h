@@ -108,21 +108,22 @@ namespace Dynamic {
 			inline size_t Count() const noxnd { return m_layout.GetCount(); }
 			inline size_t BufferSize() const noxnd { return m_buffer.size(); }
 
+			// TODO : 统一名字，需要先统一vector参数传入方式，不然调用可能产生歧义
 			template <typename First, typename ...Rest>
 			void InitializeData(int offset, const std::vector<First>& first, const std::vector<Rest>&... rest) noxnd;
-			void InitializeData(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd;
+			void InitializeVectorData(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd;
 
 		private:
 			template <typename First, typename ...Rest>
 			void InitializeInterleaved(int offset, const std::vector<First>& first, const std::vector<Rest>&... rest) noxnd;
 			template <typename First, typename ...Rest>
 			void InitializeContinuous(int offset, const std::vector<First>& first, const std::vector<Rest>&... rest) noxnd;
-			void InitializeInterleaved(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd;
+			void InitializeVectorInterleaved(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd;
 			template <typename T>
 			void InitializeInterleaved(const std::vector<T>& data, int offset) noxnd;
 			template <typename T>
 			void InitializeContinuous(const std::vector<T>& data, int offset) noxnd;
-			void InitializeContinuous(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd;
+			void InitializeVectorContinuous(int offset, std::vector<std::pair<LeafType, std::vector<AvailableType>>>&& data) noxnd;
 			void InitializeInterleaved(int offset) noexcept { return; }
 			void InitializeContinuous(int offset) noexcept { return; }
 

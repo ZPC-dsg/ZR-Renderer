@@ -5,7 +5,7 @@ in vec4 color;
 layout (early_fragment_tests) in;
 
 layout (binding = 0, r32ui) uniform uimage2D head_index_image;
-layout (binding = 1, rgba32ui) uniform imageBuffer list_buffer;
+layout (binding = 1, rgba32ui) uniform uimageBuffer list_buffer;
 layout (binding = 0, offset = 0) uniform atomic_uint node_counter;
 
 uint PackColor(vec4 inColor) 
@@ -49,5 +49,5 @@ void main()
     item.z = floatBitsToUint(gl_FragCoord.z);
     item.w = 0;
 
-    imageStore(list_buffer, pixel_count, item);
+    imageStore(list_buffer, int(pixel_count), item);
 }

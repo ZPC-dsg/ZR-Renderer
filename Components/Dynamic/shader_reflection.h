@@ -15,7 +15,6 @@ namespace Dynamic {
 			GLenum type;
 			GLint size;
 			std::string name;
-			GLuint m_divisor;
 		};
 
 		struct ConstantAttrib {
@@ -36,7 +35,7 @@ namespace Dynamic {
 		public:
 			~ShaderReflection() = default;
 
-			static std::pair<std::vector<VertexAttrib>, std::vector<VertexAttrib>> GetVertexAttribs(GLuint program) noxnd;
+			static std::vector<VertexAttrib> GetVertexAttribs(GLuint program) noxnd;
 			static std::unordered_map<std::string, std::vector<ConstantAttrib>> GetConstantAttribs(GLuint program) noxnd;
 			static std::unordered_map<std::string, std::vector<UniformAttrib>> GetUniformAttribs(GLuint program) noxnd;
 
