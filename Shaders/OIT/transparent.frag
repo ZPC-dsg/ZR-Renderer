@@ -20,23 +20,6 @@ uint PackColor(vec4 inColor)
     return colorUInt4.r | (colorUInt4.g << 8) | (colorUInt4.b << 16) | (colorUInt4.a << 24);
 }
 
-vec4 UnpackColor(uint packedColor) 
-{
-    // 提取每个通道的8位值（0-255范围）
-    uint r = packedColor & 0xFF;               // 取低8位（R通道）
-    uint g = (packedColor >> 8) & 0xFF;        // 右移8位后取低8位（G通道）
-    uint b = (packedColor >> 16) & 0xFF;       // 右移16位后取低8位（B通道）
-    uint a = (packedColor >> 24) & 0xFF;       // 右移24位后取低8位（A通道）
-    
-    // 转换为float并归一化到[0.0, 1.0]
-    return vec4(
-        float(r) / 255.0f,
-        float(g) / 255.0f,
-        float(b) / 255.0f,
-        float(a) / 255.0f
-    );
-}
-
 void main()
 {
     uint pixel_count = atomicCounterIncrement(node_counter);

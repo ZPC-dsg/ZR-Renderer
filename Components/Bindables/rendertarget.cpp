@@ -69,16 +69,20 @@ namespace Bind {
 		gen_framebuffer(mips.data(), slices.data(), true, depth_stencil->IsDepthOnly());
 	}
 
-	RenderTarget::RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, const std::string& rb_tag, bool depth_only)
-		:m_tag(tag), m_width(rendertargets[0]->get_description().width), m_height(rendertargets[0]->get_description().height),
-		m_samples(rendertargets[0]->get_description().samplecount), m_internal_format(rendertargets[0]->get_description().internal_format)
+	RenderTarget::RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractResource>> rendertargets, const std::string& rb_tag, bool depth_only)
+		:m_tag(tag)
 	{
+		auto desc = std::static_pointer_cast<RawTexture2D>(rendertargets[0])->GetDescription();
+		m_width = desc.width;
+		m_height = desc.height;
+		m_samples = desc.samplecount;
+		m_internal_format = desc.internal_format;
+
 		m_rendertargets.reserve(rendertargets.size());
 		for (auto r : rendertargets) {
-			m_rendertargets.push_back(r->m_resource);
+			m_rendertargets.push_back(r);
 		}
 
-		auto desc = rendertargets[0]->get_description();
 		m_depthstencil = ResourceFactory::CreateRenderBuffer(rb_tag, depth_only ? GL_DEPTH_COMPONENT24 : GL_DEPTH24_STENCIL8, 
 			desc.width, desc.height, desc.samplecount);
 
@@ -202,7 +206,7 @@ namespace Bind {
 		return BindableResolver::Resolve<RenderTarget>(tag, rendertargets, depthstencil);
 	}
 
-	std::shared_ptr<RenderTarget> RenderTarget::Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, const std::string& rb_tag, bool depth_only) {
+	std::shared_ptr<RenderTarget> RenderTarget::Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractResource>> rendertargets, const std::string& rb_tag, bool depth_only) {
 		return BindableResolver::Resolve<RenderTarget>(tag, rendertargets, rb_tag, depth_only);
 	}
 

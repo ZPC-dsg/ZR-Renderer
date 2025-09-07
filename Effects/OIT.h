@@ -14,6 +14,11 @@ namespace Bind
 	class ImageTexture2D;
 }
 
+namespace DrawItems
+{
+	class Plane;
+}
+
 namespace RTREffects
 {
 	class OIT :public Utils
@@ -30,10 +35,13 @@ namespace RTREffects
 		void prepare_opaque();
 		void prepare_transparent();
 		void prepare_OITdata();
+		void prepare_blend();
+		void prepare_rectangle();
 
 		void render_opaque();
 		void render_OIT();
 		void composite();
+		void render_to_screen();
 
 		void prepare_test();
 
@@ -43,7 +51,11 @@ namespace RTREffects
 
 		std::shared_ptr<Bind::ShaderProgram> m_opaque_shader;
 		std::shared_ptr<Bind::ShaderProgram> m_transparent_shader;
+		std::shared_ptr<Bind::ShaderProgram> m_blend_shader;
 
+		std::shared_ptr<DrawItems::Plane> m_rectangle;
+
+		std::shared_ptr<Bind::ImageTexture2D> m_blend_texture;
 		std::shared_ptr<Bind::ImageTexture2D> m_test_texture;
 
 	private:

@@ -29,13 +29,16 @@ namespace RTREffects
 		render_opaque();
 		render_OIT();
 		composite();
+		render_to_screen();
 	}
 
 	void OIT::prepare()
 	{
 		prepare_opaque();
 		prepare_transparent();
-		prepare_OITdata();
+		// prepare_OITdata();
+		prepare_blend();
+		prepare_rectangle();
 	}
 
 	void OIT::prepare_ui(const std::string& name)
@@ -110,7 +113,6 @@ namespace RTREffects
 		desc.internal_format = GL_R32UI;
 		desc.cpu_format = GL_RED;
 		desc.data_type = GL_UNSIGNED_INT;
-		desc.access_mode = GL_WRITE_ONLY;
 		std::vector<uint32_t> initial_val(desc.width * desc.height, 0xFFFFFFFF);
 		auto start_offset_image = Bind::StorageTexture2D::Resolve("head_offset_image", desc, 0, (void*)initial_val.data());
 
@@ -137,6 +139,31 @@ namespace RTREffects
 		m_transparent_proxy->Cook();
 	}
 
+	void OIT::prepare_blend()
+	{
+		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "blend_vertex", "OIT", "blend.vert");
+		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "blend_fragment", "OIT", "blend.frag");
+		m_blend_shader = Bind::ShaderProgram::Resolve("blend_shader", std::vector<GLuint>{vertex, fragment});
+
+		auto opaque_framebuffer = Bind::RenderTarget::Resolve("opaque_rendertarget", globalSettings::screen_width, globalSettings::screen_height);
+		auto opaque_texture = opaque_framebuffer->get_render_target(0);
+		auto blend_framebuffer = Bind::RenderTarget::Resolve("blend_framebuffer", { opaque_texture }, "blend_renderbuffer");
+		m_blend_texture = blend_framebuffer->get_texture_image<Bind::ImageTexture2D>(0, {}, 0);
+	}
+
+	void OIT::prepare_rectangle()
+	{
+		m_rectangle = std::make_shared<DrawItems::Plane>("blend_rectangle");
+
+		Dynamic::Dsr::VertexAttrib attrib;
+		attrib.location = 0;
+		attrib.name = "aPos";
+		attrib.size = 1;
+		attrib.type = GL_FLOAT_VEC3;
+
+		m_rectangle->GenerateVAO({ attrib }, { DrawItems::VertexType::Position });
+	}
+
 	void OIT::prepare_test()
 	{
 		m_test_texture = Bind::ImageTexture2D::Resolve("test_texture", "girl.jpg", {}, 0);
@@ -149,16 +176,55 @@ namespace RTREffects
 
 	void OIT::render_opaque()
 	{
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glClear(GL_DEPTH_BUFFER_BIT);
 
+		m_opaque_shader->BindWithoutUpdate();
+		m_opaque_shader->EditUniform("view") = globalSettings::mainCamera.get_view();
+		m_opaque_shader->EditUniform("projection") = globalSettings::mainCamera.get_perspective();
+		m_opaque_shader->EditUniform("camera_pos") = globalSettings::mainCamera.get_position();
+		
+		m_proxy->Render();
 	}
 
 	void OIT::render_OIT()
 	{
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+		
+		m_transparent_shader->BindWithoutUpdate();
+		m_transparent_shader->EditUniform("view") = globalSettings::mainCamera.get_view();
+		m_transparent_shader->EditUniform("projection") = globalSettings::mainCamera.get_perspective();
 
+		m_transparent_proxy->Render();
 	}
 
 	void OIT::composite()
 	{
+		m_blend_shader->BindWithoutUpdate();
+		auto render_target = Bind::RenderTarget::Resolve("blend_framebuffer", 0, 0);
+		render_target->Bind();
+		auto list_buffer = Bind::TextureBuffer::Resolve("list_texture_buffer", 0, GL_RGBA32F, 0, 1);
+		list_buffer->SetUsage(true);
+		list_buffer->Bind();
 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+
+		m_rectangle->Draw();
+
+		list_buffer->SetUsage(false);
+		list_buffer->UnBind();
+		render_target->UnBind();
+		m_blend_shader->UnBind();
+		glDisable(GL_BLEND);
+	}
+
+	void OIT::render_to_screen()
+	{
+		m_blend_texture->Bind();
+		Common::RenderHelper::RenderTextureToScreen(m_blend_texture);
+		m_blend_texture->UnBind();
 	}
 }
