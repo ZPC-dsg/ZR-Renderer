@@ -57,6 +57,7 @@ namespace RTREffects
 
 		std::shared_ptr<Bind::ImageTexture2D> m_blend_texture;
 		std::shared_ptr<Bind::ImageTexture2D> m_test_texture;
+		std::shared_ptr<Bind::ImageTexture2D> m_test_opaque;
 
 	private:
 		int m_sample_count = 4;

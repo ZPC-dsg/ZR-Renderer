@@ -103,6 +103,12 @@ namespace SceneGraph {
 	void Node::BindAll() {
 		for (auto& mp : m_bindables) {
 			for (auto& p : mp) {
+				if (p.first == typeid(Bind::ShaderProgram))
+				{
+					std::static_pointer_cast<Bind::ShaderProgram>(p.second[0])->BindWithoutUpdate();
+					continue;
+				}
+
 				for (auto& b : p.second) {
 					b->Bind();
 				}

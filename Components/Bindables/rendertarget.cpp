@@ -112,6 +112,7 @@ namespace Bind {
 		:m_tag(tag), m_width(width), m_height(height), m_samples(sample_count), m_internal_format(format)
 	{
 		glCreateFramebuffers(1, &m_framebuffer);
+		glObjectLabel(GL_FRAMEBUFFER, m_framebuffer, -1, m_tag.c_str());
 	}
 
 	RenderTarget::~RenderTarget() {

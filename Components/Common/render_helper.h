@@ -31,6 +31,7 @@ namespace Common
 			{
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			}
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			Get().full_screen_plane.Draw();
 

@@ -27,18 +27,19 @@ namespace RTREffects
 	void OIT::render()
 	{
 		render_opaque();
-		render_OIT();
-		composite();
-		render_to_screen();
+		// render_OIT();
+		// composite();
+		// render_to_screen();
+		Common::RenderHelper::RenderTextureToScreen(m_test_opaque);
 	}
 
 	void OIT::prepare()
 	{
 		prepare_opaque();
-		prepare_transparent();
+		// prepare_transparent();
 		// prepare_OITdata();
-		prepare_blend();
-		prepare_rectangle();
+		// prepare_blend();
+		// prepare_rectangle();
 	}
 
 	void OIT::prepare_ui(const std::string& name)
@@ -73,6 +74,8 @@ namespace RTREffects
 			[](glm::mat4 model)->glm::mat4 {return model; });
 		m_proxy->Cook();
 		m_proxy->ScaleModel(glm::vec3(0.02f));
+
+		m_test_opaque = opaque_render_target->get_texture_image<Bind::ImageTexture2D>(0, {}, 0);
 	}
 
 	void OIT::prepare_transparent()
@@ -178,9 +181,7 @@ namespace RTREffects
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
-		glClear(GL_DEPTH_BUFFER_BIT);
 
-		m_opaque_shader->BindWithoutUpdate();
 		m_opaque_shader->EditUniform("view") = globalSettings::mainCamera.get_view();
 		m_opaque_shader->EditUniform("projection") = globalSettings::mainCamera.get_perspective();
 		m_opaque_shader->EditUniform("camera_pos") = globalSettings::mainCamera.get_position();
@@ -223,8 +224,6 @@ namespace RTREffects
 
 	void OIT::render_to_screen()
 	{
-		m_blend_texture->Bind();
 		Common::RenderHelper::RenderTextureToScreen(m_blend_texture);
-		m_blend_texture->UnBind();
 	}
 }

@@ -110,7 +110,13 @@ namespace SceneGraph {
 	}
 
 	void DrawableProxy::Render() {
+		m_root->BindAll();
+		if (m_root->HasComponent(typeid(Bind::RenderTarget)))
+		{
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		}
 		m_root->StartRender();
+		m_root->UnBindAll();
 	}
 
 	void DrawableProxy::Bind() {

@@ -139,9 +139,7 @@ void Utils::start() {
 
         if (globalSettings::window_valid)
         {
-            // 每帧开头几乎总是要清除颜色缓冲，直接写死
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
             render();
 
             ui_newFrame();
