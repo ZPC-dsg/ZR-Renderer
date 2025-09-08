@@ -61,6 +61,7 @@ public:
 	void MapRange(size_t offset, size_t length, GLbitfield flags = 0) noxnd;
 	bool UnMapRange() noxnd;
 	inline GLbitfield StorageFlags() const noexcept { return m_storage_flags; };
+	GLbitfield MapFlags() const noexcept;
 	inline bool HasFlag(GLbitfield flag) const noexcept { return (m_storage_flags & flag) == flag; };
 
 private:

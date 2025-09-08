@@ -7,10 +7,7 @@ namespace Bind
 		:m_counter_name(counter_name), m_binding(binding), m_initial_value(initial_value)
 	{
 		std::string buffer_name = counter_name + "_buffer#";
-		m_buffer = std::static_pointer_cast<RawBuffer>(ResourceFactory::CreateBuffer(buffer_name, initial_value.size() * sizeof(GLuint), GL_MAP_READ_BIT | GL_MAP_WRITE_BIT));
-		m_buffer->BindBase(GL_ATOMIC_COUNTER_BUFFER, binding);
-
-		m_buffer->UpdateMap(initial_value.size() * sizeof(GLuint), 0, initial_value.data());
+		m_buffer = std::static_pointer_cast<RawBuffer>(ResourceFactory::CreateBuffer(buffer_name, initial_value.size() * sizeof(GLuint), GL_MAP_WRITE_BIT));
 	}
 
 	void AtomicCounter::Bind() noxnd

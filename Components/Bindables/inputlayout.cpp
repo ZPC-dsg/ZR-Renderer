@@ -48,19 +48,20 @@ namespace Bind {
 			GLsizei stride = st == VertexLayout::InputSteppingType::Interleaved ? layout.VertexSize() : 0;
 
 			for (const auto& d : descs) {
-				glEnableVertexAttribArray(d.sementic_location);
-
 				if (d.element_column == 1) {
+					glEnableVertexAttribArray(d.sementic_location);
 					glVertexAttribPointer(d.sementic_location, d.element_count, d.element_type, GL_FALSE, stride, (void*)(d.byteoffset));
+					glVertexAttribDivisor(d.sementic_location, 1);
 				}
 				else {//假设使用的矩阵都是方阵
+					// TODO : 矩阵元素可能是double，改一下sizeof部分
 					GLsizei new_stride = st == VertexLayout::InputSteppingType::Interleaved ? stride : d.element_column * d.element_column * sizeof(float);
 					for (int i = 0; i < d.element_column; i++) {
+						glEnableVertexAttribArray(d.sementic_location + i);
 						glVertexAttribPointer(d.sementic_location + i, d.element_count, d.element_type, GL_FALSE, new_stride, (void*)(d.byteoffset + i * d.element_column * sizeof(float)));
+						glVertexAttribDivisor(d.sementic_location + i, 1);
 					}
 				}
-
-				glVertexAttribDivisor(d.sementic_location, 1);
 			}
 		}
 

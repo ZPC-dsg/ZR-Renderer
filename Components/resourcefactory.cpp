@@ -1,5 +1,6 @@
 #include <resourcefactory.h>
 #include <init.h>
+#include <logging.h>
 
 ResourceFactory& MainFactory = ResourceFactory::GetInstance();
 
@@ -78,23 +79,31 @@ void RawBuffer::UpdateCopy(size_t size, size_t offset, const void* data) noxnd {
 }
 
 void RawBuffer::UpdateMap(size_t size, size_t offset, const void* data) noxnd {
-	if ((!HasFlag(GL_DYNAMIC_STORAGE_BIT)) || !HasFlag(GL_MAP_WRITE_BIT)) {
-		return;
-	}
+	if (HasFlag(GL_MAP_WRITE_BIT))
+	{
+		MapRange(offset, size, MapFlags());
+		std::memcpy(m_data_pointer, data, size);
 
-	MapRange(offset, size, m_storage_flags ^ GL_DYNAMIC_STORAGE_BIT);
-	std::memcpy(m_data_pointer, data, size);
+		if (!HasFlag(GL_MAP_PERSISTENT_BIT)) {
+			UnMapRange();
+			return;
+		}
+		else if (!HasFlag(GL_MAP_COHERENT_BIT)) {
+			glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+			return;
+		}
+	}
+	else
+	{
+		LOGE("Buffer resource can not be mapped because of lack of flag GL_MAP_WRITE_BIT!");
+		assert(false);
+	}
+}
 
-	if (!HasFlag(GL_MAP_PERSISTENT_BIT)) {
-		UnMapRange();
-		return;
-	}
-	else if(!HasFlag(GL_MAP_COHERENT_BIT)) {
-		glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-		return;
-	}
-	
-	return;
+GLbitfield RawBuffer::MapFlags() const noexcept
+{
+	return m_storage_flags & (GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_FLUSH_EXPLICIT_BIT
+		| GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 }
 
 void RawBuffer::MapRange(size_t offset, size_t length, GLbitfield flags) noxnd {

@@ -26,7 +26,7 @@ public:
     float m_yaw;
     float m_pitch;
 
-    float MovementSpeed = 2.5f;
+    float MovementSpeed = 25.0f;
     float MouseSensitivity = 0.1f;
 
     float zNear;

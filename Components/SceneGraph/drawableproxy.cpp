@@ -109,12 +109,11 @@ namespace SceneGraph {
 		LOGI("Finished cooking drawable: {}!", m_name.c_str());
 	}
 
-	void DrawableProxy::Render() {
+	void DrawableProxy::Render(bool clear_texture, bool clear_depth, bool clear_stencil) {
 		m_root->BindAll();
-		if (m_root->HasComponent(typeid(Bind::RenderTarget)))
-		{
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}
+		
+		glClear((GL_COLOR_BUFFER_BIT * clear_texture) | (GL_DEPTH_BUFFER_BIT * clear_depth) | (GL_STENCIL_BUFFER_BIT * clear_stencil));
+
 		m_root->StartRender();
 		m_root->UnBindAll();
 	}

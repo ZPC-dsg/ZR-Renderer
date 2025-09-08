@@ -1,12 +1,15 @@
 #version 450 core
 
-in vec4 color;
-
 layout (early_fragment_tests) in;
+
+layout (location = 0) in vec4 geo_color;
 
 layout (binding = 0, r32ui) uniform uimage2D head_index_image;
 layout (binding = 1, rgba32ui) uniform uimageBuffer list_buffer;
 layout (binding = 0, offset = 0) uniform atomic_uint node_counter;
+
+float near_plane = 0.1f;
+float far_plane = 512.0f;
 
 uint PackColor(vec4 inColor) 
 {
@@ -20,6 +23,13 @@ uint PackColor(vec4 inColor)
     return colorUInt4.r | (colorUInt4.g << 8) | (colorUInt4.b << 16) | (colorUInt4.a << 24);
 }
 
+float LinearizeDepth(float depth) 
+{
+    float z = depth * 2.0 - 1.0; // back to NDC 
+    return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));	
+}
+
+
 void main()
 {
     uint pixel_count = atomicCounterIncrement(node_counter);
@@ -28,8 +38,10 @@ void main()
 
     uvec4 item;
     item.x = oldStartOffset;
-    item.y = PackColor(color);
-    item.z = floatBitsToUint(gl_FragCoord.z);
+    item.y = PackColor(geo_color);
+
+    float linear_depth = LinearizeDepth(gl_FragCoord.z) / far_plane;
+    item.z = floatBitsToUint(linear_depth);
     item.w = 0;
 
     imageStore(list_buffer, int(pixel_count), item);

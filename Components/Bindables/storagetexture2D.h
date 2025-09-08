@@ -26,9 +26,16 @@ namespace Bind
 
 		void UpdatePUBData(void* data, size_t offset = 0, size_t size = 0) noxnd;
 
+		inline bool ShouldInitialize() const noexcept { return m_should_initialize; }
+		inline void SetInitialize(bool should_initialize) { m_should_initialize = should_initialize; }
+
+	private:
+		void InitializeStorage();
+
 	private:
 		std::string m_image_name;
 
 		std::shared_ptr<PixelUnpackBuffer> m_pub;
+		bool m_should_initialize = true;
 	};
 }

@@ -91,13 +91,9 @@ namespace Bind
 
 	void StorageTexture2D::Bind() noxnd
 	{
-		if (m_pub)
+		if (m_pub && m_should_initialize)
 		{
-			m_pub->Bind();
-			m_resource->BindAsStorage(m_unit);
-			const auto& desc = m_resource->GetDescription();
-			m_resource->Update({ 0, 0, float(desc.width), float(desc.height) }, desc.cpu_format, desc.data_type, (void*)0);
-			m_pub->UnBind();
+			InitializeStorage();
 		}
 		else
 		{
@@ -145,6 +141,15 @@ namespace Bind
 	{
 		m_pub->Bind();
 		m_pub->Update(data, offset, size);
+		m_pub->UnBind();
+	}
+
+	void StorageTexture2D::InitializeStorage()
+	{
+		m_pub->Bind();
+		m_resource->BindAsStorage(m_unit);
+		const auto& desc = m_resource->GetDescription();
+		m_resource->Update({ 0, 0, float(desc.width), float(desc.height) }, desc.cpu_format, desc.data_type, (void*)0);
 		m_pub->UnBind();
 	}
 }

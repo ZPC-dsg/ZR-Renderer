@@ -41,9 +41,12 @@ namespace RTREffects
 		void render_opaque();
 		void render_OIT();
 		void composite();
-		void render_to_screen();
 
-		void prepare_test();
+		// void render_to_screen();
+
+		// void prepare_test();
+		void prepare_instance_test();
+		void render_instance_test();
 
 	private:
 		std::shared_ptr<SceneGraph::ModelProxy> m_proxy;
@@ -55,9 +58,12 @@ namespace RTREffects
 
 		std::shared_ptr<DrawItems::Plane> m_rectangle;
 
-		std::shared_ptr<Bind::ImageTexture2D> m_blend_texture;
+		std::shared_ptr<Bind::ImageTexture2D> m_opaque_texture;
+
+
 		std::shared_ptr<Bind::ImageTexture2D> m_test_texture;
 		std::shared_ptr<Bind::ImageTexture2D> m_test_opaque;
+		std::shared_ptr<Bind::ShaderProgram> m_instance_test_shader;
 
 	private:
 		int m_sample_count = 4;

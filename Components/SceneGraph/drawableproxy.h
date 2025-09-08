@@ -68,7 +68,7 @@ namespace SceneGraph {
 
 		void AddControlNode(const std::string& name, const std::string& father_name);
 
-		void Render();
+		void Render(bool clear_texture = true, bool clear_depth = true, bool clear_stencil = false);
 		void Bind();//绑定根节点所有bindables避免在渲染的时候重复绑定
 
 	protected:

@@ -39,7 +39,7 @@ namespace Bind
 
 	void TextureBuffer::Bind() noxnd
 	{
-		m_is_texture ? m_resource->Bind(m_unit) : m_resource->BindAsStorage(m_buffer_unit);
+		m_is_texture ? m_resource->Bind(m_unit) : m_resource->BindAsStorage(m_buffer_unit, GL_FALSE);
 	}
 
 	void TextureBuffer::UnBind() noxnd
@@ -65,19 +65,19 @@ namespace Bind
 	std::string TextureBuffer::GenerateUID(const std::string& name, size_t size, GLenum format, GLuint texture_unit, GLuint buffer_unit)
 	{
 		using namespace std::string_literals;
-		return typeid(TextureBuffer).name() + "#"s + std::to_string(texture_unit) + "#"s + std::to_string(buffer_unit);
+		return typeid(TextureBuffer).name() + "#"s + name + "#"s + std::to_string(texture_unit) + "#"s + std::to_string(buffer_unit);
 	}
 
 	std::string TextureBuffer::GenerateUID(const std::string& name, size_t size, GLenum format, GLuint texture_unit, GLuint buffer_unit, void* data, bool is_texture)
 	{
 		using namespace std::string_literals;
-		return typeid(TextureBuffer).name() + "#"s + std::to_string(texture_unit) + "#"s + std::to_string(buffer_unit);
+		return typeid(TextureBuffer).name() + "#"s + name + "#"s + std::to_string(texture_unit) + "#"s + std::to_string(buffer_unit);
 	}
 
 	std::string TextureBuffer::GenerateUID(const std::string& name, size_t size, GLenum format, GLuint texture_unit, GLuint buffer_unit, std::shared_ptr<RawBuffer> buffer, size_t start_offset, size_t map_size, bool is_texture)
 	{
 		using namespace std::string_literals;
-		return typeid(TextureBuffer).name() + "#"s + std::to_string(texture_unit) + "#"s + std::to_string(buffer_unit);
+		return typeid(TextureBuffer).name() + "#"s + name + "#"s + std::to_string(texture_unit) + "#"s + std::to_string(buffer_unit);
 	}
 
 	std::string TextureBuffer::GetUID() const noexcept
