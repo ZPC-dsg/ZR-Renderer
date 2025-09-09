@@ -7,7 +7,7 @@
 namespace Bind {
 	RenderTarget::RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractTexture> depthstencil)
 		:m_tag(tag), m_width(rendertargets[0]->get_description().width), m_height(rendertargets[0]->get_description().height), 
-		m_samples(rendertargets[0]->get_description().samplecount), m_internal_format(rendertargets[0]->get_description().internal_format)
+		m_samples(rendertargets[0]->get_description().samplecount)
 	{
 		m_rendertargets.reserve(rendertargets.size());
 		for (auto r : rendertargets) {
@@ -24,7 +24,7 @@ namespace Bind {
 	RenderTarget::RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractTexture> depthstencil,
 		unsigned int* mips, unsigned int* slices)
 		:m_tag(tag), m_width(rendertargets[0]->get_description().width), m_height(rendertargets[0]->get_description().height),
-		m_samples(rendertargets[0]->get_description().samplecount), m_internal_format(rendertargets[0]->get_description().internal_format)
+		m_samples(rendertargets[0]->get_description().samplecount)
 	{
 		m_rendertargets.reserve(rendertargets.size());
 		for (auto r : rendertargets) {
@@ -48,14 +48,12 @@ namespace Bind {
 			m_width = desc.width;
 			m_height = desc.height;
 			m_samples = desc.samplecount;
-			m_internal_format = desc.internal_format;
 		}
 		else
 		{
 			m_width = depth_stencil->GetWidth();
 			m_height = depth_stencil->GetHeight();
 			m_samples = 1;
-			m_internal_format = GL_RGBA8;
 		}
 
 		m_rendertargets.reserve(rendertargets.size());
@@ -76,7 +74,6 @@ namespace Bind {
 		m_width = desc.width;
 		m_height = desc.height;
 		m_samples = desc.samplecount;
-		m_internal_format = desc.internal_format;
 
 		m_rendertargets.reserve(rendertargets.size());
 		for (auto r : rendertargets) {
@@ -94,7 +91,7 @@ namespace Bind {
 	RenderTarget::RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, const std::string& rb_tag,
 		unsigned int* mips, unsigned int* slices, bool depth_only)
 		:m_tag(tag), m_width(rendertargets[0]->get_description().width), m_height(rendertargets[0]->get_description().height),
-		m_samples(rendertargets[0]->get_description().samplecount), m_internal_format(rendertargets[0]->get_description().internal_format)
+		m_samples(rendertargets[0]->get_description().samplecount)
 	{
 		m_rendertargets.reserve(rendertargets.size());
 		for (auto r : rendertargets) {
@@ -108,8 +105,8 @@ namespace Bind {
 		gen_framebuffer(mips, slices, true, depth_only);
 	}
 
-	RenderTarget::RenderTarget(const std::string& tag, unsigned int width, unsigned int height, unsigned int sample_count, GLenum format)
-		:m_tag(tag), m_width(width), m_height(height), m_samples(sample_count), m_internal_format(format)
+	RenderTarget::RenderTarget(const std::string& tag, unsigned int width, unsigned int height, unsigned int sample_count)
+		:m_tag(tag), m_width(width), m_height(height), m_samples(sample_count)
 	{
 		glCreateFramebuffers(1, &m_framebuffer);
 		glObjectLabel(GL_FRAMEBUFFER, m_framebuffer, -1, m_tag.c_str());
@@ -216,8 +213,8 @@ namespace Bind {
 		return BindableResolver::Resolve<RenderTarget>(tag, rendertargets, rb_tag, mips, slices, depth_only);
 	}
 
-	std::shared_ptr<RenderTarget> RenderTarget::Resolve(const std::string& tag, unsigned int width, unsigned int height, unsigned int sample_count, GLenum format) {
-		return BindableResolver::Resolve<RenderTarget>(tag, width, height, sample_count, format);
+	std::shared_ptr<RenderTarget> RenderTarget::Resolve(const std::string& tag, unsigned int width, unsigned int height, unsigned int sample_count) {
+		return BindableResolver::Resolve<RenderTarget>(tag, width, height, sample_count);
 	}
 
 	std::string RenderTarget::GetUID() const noexcept {
@@ -282,12 +279,12 @@ namespace Bind {
 
 #define X(Target) \
 	template <> \
-	RenderTarget& RenderTarget::AppendTexture<Target>(const std::string& tag, const OGL_TEXTURE_PARAMETER& param, unsigned int miplevels, unsigned int slices) noxnd { \
+	RenderTarget& RenderTarget::AppendTexture<Target>(const std::string& tag, const OGL_TEXTURE_PARAMETER& param, unsigned int miplevels, unsigned int slices, GLenum internal_format) noxnd { \
 		OGL_TEXTURE2D_DESC desc; \
 		desc.width = m_width; \
 		desc.height = m_height; \
 		desc.samplecount = m_samples; \
-		desc.internal_format = m_internal_format; \
+		desc.internal_format = internal_format; \
 		desc.arrayslices = slices; \
 		desc.target = Target; \
 		\
@@ -366,9 +363,9 @@ namespace Bind {
 		return *this;
 	}
 
+	// TODO : Ó¦µ±·ÏÆúµô
 	void RenderTarget::ClearTextures(unsigned int new_width, unsigned int new_height, GLenum internal_format, unsigned int new_samples) {
 		m_rendertargets = {};
-		m_internal_format = internal_format;
 		m_width = new_width;
 		m_height = new_height;
 		m_samples = new_samples;

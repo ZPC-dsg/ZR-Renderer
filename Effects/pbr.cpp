@@ -134,10 +134,10 @@ namespace RTREffects {
 		auto hdr = Bind::ImageTexture2D::Resolve("hdr_image", "hdr/newport_loft.hdr", param, 0);
 
 		unsigned int fbo_width = 512, fbo_height = 512;
-		auto render_target = Bind::RenderTarget::Resolve("environment_framebuffer", fbo_width, fbo_height, 1, GL_RGB16F);
+		auto render_target = Bind::RenderTarget::Resolve("environment_framebuffer", fbo_width, fbo_height, 1);
 		param.wrap_z = GL_CLAMP_TO_EDGE;
 		param.min_filter = GL_LINEAR_MIPMAP_LINEAR;
-		render_target->AppendTexture<GL_TEXTURE_CUBE_MAP>("environment_texture", param).AppendDepthComponent<GL_RENDERBUFFER>("environment_depth")
+		render_target->AppendTexture<GL_TEXTURE_CUBE_MAP>("environment_texture", param, 1, 1, GL_RGBA16F).AppendDepthComponent<GL_RENDERBUFFER>("environment_depth")
 			.CheckCompleteness();
 
 		using Shad = Bind::ShaderObject::ShaderType;

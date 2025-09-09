@@ -41,4 +41,9 @@ namespace RTREffects
 			AddRootTextureRule("normal_tex", 2, SceneGraph::Material::TextureCategory::NORMAL);
 		m_proxy->ScaleModel(glm::vec3(0.2f));
 	}
+
+	void DeferRenderer::prepare_defer()
+	{
+
+	}
 }

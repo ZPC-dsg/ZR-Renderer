@@ -30,14 +30,14 @@ namespace Bind {
 		RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractResource>> rendertargets, const std::string& rb_tag, bool depth_only = true);
 		RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, const std::string& rb_tag,
 			unsigned int* mips, unsigned int* slices, bool depth_only = true);
-		RenderTarget(const std::string& tag, unsigned int width, unsigned int height, unsigned int sample_count = 1, GLenum format = GL_RGB8);
+		RenderTarget(const std::string& tag, unsigned int width, unsigned int height, unsigned int sample_count = 1);
 		~RenderTarget();
 
 		template <GLenum Target>
-		RenderTarget& AppendTexture(const std::string& tag, const OGL_TEXTURE_PARAMETER& param = {}, unsigned int miplevels = 1, unsigned int slices = 1) noxnd;
+		RenderTarget& AppendTexture(const std::string& tag, const OGL_TEXTURE_PARAMETER& param = {}, unsigned int miplevels = 1, unsigned int slices = 1, GLenum internal_format = GL_RGB8) noxnd;
 #define X(Target) \
 	template <> \
-	RenderTarget& AppendTexture<Target>(const std::string& name, const OGL_TEXTURE_PARAMETER& param, unsigned int miplevels, unsigned int slices) noxnd; 
+	RenderTarget& AppendTexture<Target>(const std::string& name, const OGL_TEXTURE_PARAMETER& param, unsigned int miplevels, unsigned int slices, GLenum internal_format) noxnd; 
 
 		TEXTURE_HELPER
 
@@ -81,7 +81,7 @@ namespace Bind {
 		static std::shared_ptr<RenderTarget> Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractResource>> rendertargets, const std::string& rb_tag, bool depth_only = true);
 		static std::shared_ptr<RenderTarget> Resolve(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, const std::string& rb_tag,
 			unsigned int* mips, unsigned int* slices, bool depth_only = true);
-		static std::shared_ptr<RenderTarget> Resolve(const std::string& tag, unsigned int width, unsigned int height, unsigned int sample_count = 1, GLenum format = GL_RGB8);
+		static std::shared_ptr<RenderTarget> Resolve(const std::string& tag, unsigned int width, unsigned int height, unsigned int sample_count = 1);
 		template <typename ...Ignore>
 		static std::string GenerateUID(const std::string& tag, Ignore... ignore) {
 			using namespace std::string_literals;
@@ -123,7 +123,6 @@ namespace Bind {
 		std::shared_ptr<AbstractResource> m_depthstencil;
 
 		unsigned int m_width, m_height, m_samples = 1;
-		GLenum m_internal_format = GL_RGB8;
 	};
 
 	template <texture_type T>
