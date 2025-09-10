@@ -34,6 +34,34 @@ namespace SceneGraph {
 		MaterialShiniStrength,
 	};
 
+#define DEFAULT_VALUE_GENERATOR \
+	X(ConfigurationType::MaterialDiffuse, glm::vec3, glm::vec3(0.0f)) \
+	X(ConfigurationType::MaterialSpecular, glm::vec3, glm::vec3(0.0f)) \
+	X(ConfigurationType::MaterialAmbient, glm::vec3, glm::vec3(0.0f)) \
+	X(ConfigurationType::MaterialEmissive, glm::vec3, glm::vec3(0.0f)) \
+	X(ConfigurationType::MaterialTransparent, glm::vec3, glm::vec3(0.0f)) \
+	X(ConfigurationType::MaterialOpacity, float, 1.0f) \
+	X(ConfigurationType::MaterialShininess, float, 64.0f) \
+	X(ConfigurationType::MaterialShiniStrength, float, 0.08f) \
+	X(ConfigurationType::TextureStrength, float, 1.0f)
+
+	template<enum ConfigurationType> struct DefaultMapper { static constexpr bool is_valid = false; };
+
+#define X(Config, SysType, Default) \
+	template<> \
+	struct DefaultMapper<Config> \
+	{ \
+		static constexpr bool is_valid = true; \
+		\
+		using ValueType = SysType; \
+		static constexpr ValueType default_value = Default; \
+	};
+
+	DEFAULT_VALUE_GENERATOR
+#undef X
+
+#undef DEFAULT_VALUE_GENERATOR
+
 #define CONFIG_GENERATOR \
 	X(ConfigurationType::MaterialDiffuse, glm::vec3, m_diffuse, UniConstDiffuseFunc) \
 	X(ConfigurationType::MaterialSpecular, glm::vec3, m_specular, UniConstSpecularFunc) \
@@ -135,6 +163,10 @@ namespace SceneGraph {
 			assert(index < m_drawables.size());
 			return *m_drawables[index];
 		}
+		inline bool HasMaterial() const noexcept
+		{
+			return m_materials.size();
+		}
 		inline const Material& GetMaterial(size_t index) const {
 			assert(index < m_materials.size());
 			return *m_materials[index];
@@ -185,7 +217,11 @@ namespace SceneGraph {
 	\
 	template <typename Derived, typename Func, typename... Args> \
 	void ClassName<Derived, Func, Args...>::operator()(EntityNode& node, size_t index) { \
-		this->m_ref = std::apply([&](auto&&... args){return m_func(node.m_materials[index]->GetExtraInformation().Member, std::forward<Args>(args)...);}, m_args); \
+		if (!node.HasMaterial()) \
+		{ \
+			this->m_ref = std::apply([&](auto&&... args){return m_func(DefaultMapper<ConfigType>::default_value, std::forward<Args>(args)...);}, m_args); \
+		} \
+		this->m_ref = std::apply([&](auto&&... args){return m_func(node.GetMaterial(index).GetExtraInformation().Member, std::forward<Args>(args)...);}, m_args); \
 	}
 
 	CONFIG_GENERATOR
@@ -226,6 +262,10 @@ namespace SceneGraph {
 
 	template <typename Derived, typename Func, typename... Args>
 	void UniConstTexStrengthFunc<Derived, Func, Args...>::operator()(EntityNode& node, size_t index) {
+		if (!node.HasMaterial())
+		{
+			this->m_ref = std::apply([&](auto&&... args) {return m_func(DefaultMapper<ConfigurationType::TextureStrength>::default_value, std::forward<Args>(args)...); }, m_args);
+		}
 		this->m_ref = std::apply([&](auto&&... args) {return m_func(node.GetMaterial(index).GetTexture(m_type, m_index).m_strength, std::forward<Args>(args)...); }, m_args);
 	}
 

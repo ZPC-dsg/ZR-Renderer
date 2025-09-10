@@ -99,8 +99,8 @@ namespace SceneGraph {
 		bool m_is_twosided = true;//渲染材质时是否需要禁用背面剔除
 
 		float m_opacity = 1.0;
-		float m_shininess = 1.0;//phong光照模型中镜面反射项的幂次系数
-		float m_shininess_strength = 1.0;//放缩镜面反射的颜色强度
+		float m_shininess = 64.0;//phong光照模型中镜面反射项的幂次系数
+		float m_shininess_strength = 0.08;//放缩镜面反射的颜色强度
 
 		static std::unordered_map<aiBlendMode, MatBlendMode> m_blendmodemap;
 		static std::unordered_map<aiShadingMode, MatShadingMode> m_shadingmap;

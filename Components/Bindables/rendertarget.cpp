@@ -303,12 +303,12 @@ namespace Bind {
 
 #define X(Target) \
 	template <> \
-	RenderTarget& RenderTarget::AppendDepthComponent<Target>(const std::string& tag, unsigned int slices) noxnd { \
+	RenderTarget& RenderTarget::AppendDepthComponent<Target>(const std::string& tag, unsigned int slices, GLenum depth_format) noxnd { \
 		OGL_TEXTURE2D_DESC desc; \
 		desc.width = m_width; \
 		desc.height = m_height; \
 		desc.samplecount = m_samples; \
-		desc.internal_format = GL_DEPTH_COMPONENT24; \
+		desc.internal_format = depth_format; \
 		desc.arrayslices = slices; \
 		desc.target = Target; \
 		\
@@ -324,8 +324,8 @@ namespace Bind {
 
 #undef X
 	template <>
-	RenderTarget& RenderTarget::AppendDepthComponent<GL_RENDERBUFFER>(const std::string& tag, unsigned int slices) noxnd {
-		m_depthstencil = ResourceFactory::CreateRenderBuffer(tag, GL_DEPTH_COMPONENT24, m_width, m_height, m_samples);
+	RenderTarget& RenderTarget::AppendDepthComponent<GL_RENDERBUFFER>(const std::string& tag, unsigned int slices, GLenum depth_format) noxnd {
+		m_depthstencil = ResourceFactory::CreateRenderBuffer(tag, depth_format, m_width, m_height, m_samples);
 		auto d = std::dynamic_pointer_cast<RawRenderBuffer>(m_depthstencil);
 		d->BindAsDepthComponent(m_framebuffer);
 
@@ -334,12 +334,12 @@ namespace Bind {
 
 #define X(Target) \
 	template <> \
-	RenderTarget& RenderTarget::AppendDepthStencil<Target>(const std::string& tag, unsigned int slices) noxnd { \
+	RenderTarget& RenderTarget::AppendDepthStencil<Target>(const std::string& tag, unsigned int slices, GLenum depth_stencil_format) noxnd { \
 		OGL_TEXTURE2D_DESC desc; \
 		desc.width = m_width; \
 		desc.height = m_height; \
 		desc.samplecount = m_samples; \
-		desc.internal_format = GL_DEPTH24_STENCIL8; \
+		desc.internal_format = depth_stencil_format; \
 		desc.arrayslices = slices; \
 		desc.target = Target; \
         \
@@ -355,8 +355,8 @@ namespace Bind {
 
 #undef X
 	template <>
-	RenderTarget& RenderTarget::AppendDepthStencil<GL_RENDERBUFFER>(const std::string& tag, unsigned int slices) noxnd {
-		m_depthstencil = ResourceFactory::CreateRenderBuffer(tag, GL_DEPTH24_STENCIL8, m_width, m_height, m_samples);
+	RenderTarget& RenderTarget::AppendDepthStencil<GL_RENDERBUFFER>(const std::string& tag, unsigned int slices, GLenum depth_stencil_format) noxnd {
+		m_depthstencil = ResourceFactory::CreateRenderBuffer(tag, depth_stencil_format, m_width, m_height, m_samples);
 		auto d = std::dynamic_pointer_cast<RawRenderBuffer>(m_depthstencil);
 		d->BindAsDepthStencil(m_framebuffer);
 

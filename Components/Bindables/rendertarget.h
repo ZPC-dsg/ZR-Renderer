@@ -22,7 +22,6 @@ namespace Bind {
 	class RenderTarget :public Bindable {
 	public:
 		// TODO : m_width和m_height成员在输入参数rendertarget大小为0时初始化逻辑有问题，需要修正
-		// TODO : 把AbstractTexture换成AbstractResource
 		RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractTexture> depthstencil);
 		RenderTarget(const std::string& tag, std::vector<std::shared_ptr<AbstractTexture>> rendertargets, std::shared_ptr<AbstractTexture> depthstencil,
 			unsigned int* mips, unsigned int* slices);
@@ -45,29 +44,29 @@ namespace Bind {
 
 
 		template <GLenum Target>
-		RenderTarget& AppendDepthComponent(const std::string& tag, unsigned int slices = 1) noxnd;
+		RenderTarget& AppendDepthComponent(const std::string& tag, unsigned int slices = 1, GLenum depth_format = GL_DEPTH_COMPONENT24) noxnd;
 #define X(Target) \
 	template <> \
-	RenderTarget& AppendDepthComponent<Target>(const std::string& tag, unsigned int slices) noxnd;
+	RenderTarget& AppendDepthComponent<Target>(const std::string& tag, unsigned int slices, GLenum depth_format) noxnd;
 
 		TEXTURE_HELPER
 
 #undef X
 		template <>
-		RenderTarget& AppendDepthComponent<GL_RENDERBUFFER>(const std::string& tag, unsigned int slices) noxnd;
+		RenderTarget& AppendDepthComponent<GL_RENDERBUFFER>(const std::string& tag, unsigned int slices, GLenum depth_format) noxnd;
 
 
 		template <GLenum Target>
-		RenderTarget& AppendDepthStencil(const std::string& tag, unsigned int slices = 1) noxnd;
+		RenderTarget& AppendDepthStencil(const std::string& tag, unsigned int slices = 1, GLenum depth_stencil_format = GL_DEPTH24_STENCIL8) noxnd;
 #define X(Target) \
 	template <> \
-	RenderTarget& AppendDepthStencil<Target>(const std::string& tag, unsigned int slices) noxnd;
+	RenderTarget& AppendDepthStencil<Target>(const std::string& tag, unsigned int slices, GLenum depth_stencil_format) noxnd;
 
 		TEXTURE_HELPER
 
 #undef X
 		template <>
-		RenderTarget& AppendDepthStencil<GL_RENDERBUFFER>(const std::string& tag, unsigned int slices) noxnd;
+		RenderTarget& AppendDepthStencil<GL_RENDERBUFFER>(const std::string& tag, unsigned int slices, GLenum depth_stencil_format) noxnd;
 
 		void CheckCompleteness() noxnd;
 
