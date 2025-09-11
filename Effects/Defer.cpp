@@ -3,6 +3,7 @@
 #include <assimploader.h>
 #include <Bindables/shaderprogram.h>
 #include <Bindables/rendertarget.h>
+#include <Common/render_helper.h>
 
 namespace RTREffects
 {
@@ -23,13 +24,49 @@ namespace RTREffects
 	void DeferRenderer::render()
 	{
 		render_defer();
-		render_compute();
-		render_screen();
+		switch (m_debug_mode)
+		{
+			case -1:
+			{
+				render_compute();
+				render_screen(); 
+				break;
+			}
+			case 0:
+			{
+				render_diff_spec(true);
+				break;
+			}
+			case 1:
+			{
+				render_diff_spec(false);
+				break;
+			}
+			case 2:
+			{
+				render_normal();
+				break;
+			}
+			case 3:
+			{
+				render_depth();
+				break;
+			}
+		}
 	}
 
 	void DeferRenderer::prepare_ui(const std::string& name)
 	{
+		ImGui::Begin(name.c_str());
 
+		int item_count = sizeof(m_debug_items) / sizeof(m_debug_items[0]);
+		int debug_index = (item_count + m_debug_mode) % item_count;
+
+		ImGui::Combo("Debug Mode", &debug_index, m_debug_items, item_count);
+
+		m_debug_mode = (debug_index == item_count - 1) ? -1 : debug_index;
+
+		ImGui::End();
 	}
 
 	void DeferRenderer::prepare_scene()
@@ -58,6 +95,10 @@ namespace RTREffects
 			.AppendTexture<GL_TEXTURE_2D>("normal_shininess_texture", {}, 1, 1, GL_RGBA16F)
 			.AppendDepthComponent<GL_TEXTURE_2D>("depth_texture", 1, GL_DEPTH_COMPONENT32F);
 
+		m_diff_spec_texture = defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("diffuse_specular_texture", {}, 0);
+		m_norm_shin_texture = defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("normal_shininess_texture", {}, 0);
+		m_depth_texture = defer_framebuffer->get_texture_depthstencil<Bind::ImageTexture2D>({}, 0);
+
 		m_proxy->AddRootBindable(m_defer_shader).AddRootBindable(defer_framebuffer);
 
 		m_proxy->AddRootUniformRule<SceneGraph::ConfigurationType::Transformation>(m_defer_shader->EditUniform("model").GetLeafUniform(),
@@ -77,7 +118,14 @@ namespace RTREffects
 
 	void DeferRenderer::render_defer()
 	{
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glEnable(GL_CULL_FACE);
 
+		m_defer_shader->EditUniform("view") = globalSettings::mainCamera.get_view();
+		m_defer_shader->EditUniform("projection") = globalSettings::mainCamera.get_perspective();
+
+		m_proxy->Render();
 	}
 
 	void DeferRenderer::render_compute()
@@ -88,5 +136,27 @@ namespace RTREffects
 	void DeferRenderer::render_screen()
 	{
 
+	}
+
+	void DeferRenderer::render_diff_spec(bool diffuse)
+	{
+		if (diffuse)
+		{
+			Common::RenderHelper::RenderTextureToScreen(m_diff_spec_texture);
+		}
+		else
+		{
+			Common::RenderHelper::RenderTextureToScreen(m_diff_spec_texture, 1);
+		}
+	}
+
+	void DeferRenderer::render_normal()
+	{
+		Common::RenderHelper::RenderUnitVectorToScreen(m_norm_shin_texture);
+	}
+
+	void DeferRenderer::render_depth()
+	{
+		Common::RenderHelper::RenderLinearDepthToScreen(m_depth_texture, globalSettings::mainCamera.zNear, globalSettings::mainCamera.zFar);
 	}
 }

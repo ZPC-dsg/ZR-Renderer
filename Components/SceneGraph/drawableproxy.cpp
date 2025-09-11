@@ -112,7 +112,18 @@ namespace SceneGraph {
 	void DrawableProxy::Render(bool clear_texture, bool clear_depth, bool clear_stencil) {
 		m_root->BindAll();
 		
-		glClear((GL_COLOR_BUFFER_BIT * clear_texture) | (GL_DEPTH_BUFFER_BIT * clear_depth) | (GL_STENCIL_BUFFER_BIT * clear_stencil));
+		if (clear_texture)
+		{
+			glClear(GL_COLOR_BUFFER_BIT);
+		}
+		if (clear_depth)
+		{
+			glClear(GL_DEPTH_BUFFER_BIT);
+		}
+		if (clear_stencil)
+		{
+			glClear(GL_STENCIL_BUFFER_BIT);
+		}
 
 		m_root->StartRender();
 		m_root->UnBindAll();
