@@ -91,13 +91,20 @@ namespace Bind
 
 	void StorageTexture2D::Bind() noxnd
 	{
-		if (m_pub && m_should_initialize)
+		if (m_used_as_storage)
 		{
-			InitializeStorage();
+			if (m_pub && m_should_initialize)
+			{
+				InitializeStorage();
+			}
+			else
+			{
+				m_resource->BindAsStorage(m_unit);
+			}
 		}
 		else
 		{
-			m_resource->BindAsStorage(m_unit);
+			m_resource->Bind(m_unit);
 		}
 	}
 

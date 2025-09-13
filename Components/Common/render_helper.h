@@ -23,7 +23,7 @@ namespace Common
 		// 着色器简单地接受一张2D纹理，将这张纹理渲染到整个指定的render target上，另外，这个texture的绑定点一定需要设置为0
 		// channels代表希望渲染的通道组合，每通道用一位代表，位从高到低为RGBA，默认渲染RGB三通道
 		// 默认会清除render target的Color Buffer，这是合理的假设
-		static void RenderTextureToScreen(std::shared_ptr<Bind::ImageTexture2D> image, unsigned int channels = 0xE, std::shared_ptr<Bind::RenderTarget> frame = nullptr, bool clear_depth = true, bool clear_stencil = false)
+		static void RenderTextureToScreen(std::shared_ptr<Bind::AbstractTexture> image, unsigned int channels = 0xE, std::shared_ptr<Bind::RenderTarget> frame = nullptr, bool clear_depth = true, bool clear_stencil = false)
 		{
 			if (channels == 0)
 			{

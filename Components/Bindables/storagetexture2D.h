@@ -29,6 +29,9 @@ namespace Bind
 		inline bool ShouldInitialize() const noexcept { return m_should_initialize; }
 		inline void SetInitialize(bool should_initialize) { m_should_initialize = should_initialize; }
 
+		inline bool UsedAsStorage() const noexcept { return m_used_as_storage; }
+		inline void SetUsage(bool storage) noexcept { m_used_as_storage = storage; }
+
 	private:
 		void InitializeStorage();
 
@@ -37,5 +40,7 @@ namespace Bind
 
 		std::shared_ptr<PixelUnpackBuffer> m_pub;
 		bool m_should_initialize = true;
+
+		bool m_used_as_storage = true;
 	};
 }

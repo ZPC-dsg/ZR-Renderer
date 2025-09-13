@@ -182,12 +182,20 @@ namespace RTREffects
 
 	void DeferRenderer::render_compute()
 	{
+		m_compute_proxy->EditUniform("view", globalSettings::mainCamera.get_view());
+		m_compute_proxy->EditUniform("proj", globalSettings::mainCamera.get_perspective());
 
+		m_compute_proxy->Dispatch();
+		// 内存屏障：确保计算着色器的image写入对后续渲染可见以及后续纹理采样能采样到最新数据
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 	}
 
 	void DeferRenderer::render_screen()
 	{
-
+		glDisable(GL_CULL_FACE);
+		m_output_image->SetUsage(false);
+		Common::RenderHelper::RenderTextureToScreen(m_output_image);
+		m_output_image->SetUsage(true);
 	}
 
 	void DeferRenderer::render_diff_spec(bool diffuse)

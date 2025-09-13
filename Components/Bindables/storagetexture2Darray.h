@@ -37,5 +37,7 @@ namespace Bind
 		GLint m_layer = 0;
 
 		std::string m_image_name;
+
+	    // TODO : pub以及绑定为纹理有关逻辑
 	};
 }

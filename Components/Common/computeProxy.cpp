@@ -38,7 +38,7 @@ namespace Common
 		}
 		else
 		{
-			if (bindable->NeedBindingPoint())
+			if (bindable->NeedBindingPoint() && binding >= 0)
 			{
 				m_binding_change_list[m_bindables.size()] = GLuint(binding);
 			}
