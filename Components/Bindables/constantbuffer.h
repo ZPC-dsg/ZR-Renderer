@@ -30,6 +30,8 @@ namespace Bind {
 
 		std::type_index GetTypeInfo() const noexcept override;
 
+		inline std::string BufferName() const noexcept { return m_buffer_name; }
+
 	private:
 		std::shared_ptr<RawBuffer> m_buffer;
 		std::shared_ptr<Dynamic::Dcb::CPUConstantBuffer> m_cpubuffer;

@@ -279,6 +279,9 @@
     <ClInclude Include="Common\render_helper.h">
       <Filter>Common\头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Common\computeProxy.h">
+      <Filter>Common\头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="storageimage.cpp">
@@ -483,6 +486,9 @@
       <Filter>Bindables\源文件</Filter>
     </ClCompile>
     <ClCompile Include="Common\render_helper.cpp">
+      <Filter>Common\源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\computeProxy.cpp">
       <Filter>Common\源文件</Filter>
     </ClCompile>
   </ItemGroup>
