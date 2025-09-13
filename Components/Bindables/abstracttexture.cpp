@@ -39,4 +39,19 @@ namespace Bind {
 	std::string AbstractTexture::resource_name() const noexcept {
 		return m_resource->ResourceName();
 	}
+
+	bool AbstractTexture::NeedBindingPoint() noexcept
+	{
+		return true;
+	}
+
+	void AbstractTexture::ChangeBindingPoint(GLuint binding) noexcept
+	{
+		m_unit = binding;
+	}
+
+	GLint AbstractTexture::GetBindingPoint() const noexcept
+	{
+		return (GLint)m_unit;
+	}
 }

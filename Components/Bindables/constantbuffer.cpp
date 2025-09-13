@@ -84,4 +84,19 @@ namespace Bind {
 	std::type_index ConstantBuffer::GetTypeInfo() const noexcept {
 		return typeid(ConstantBuffer);
 	}
+
+	bool ConstantBuffer::NeedBindingPoint() noexcept
+	{
+		return true;
+	}
+
+	void ConstantBuffer::ChangeBindingPoint(GLuint binding) noexcept
+	{
+		m_binding_point = binding;
+	}
+
+	GLint ConstantBuffer::GetBindingPoint() const noexcept
+	{
+		return (GLint)m_binding_point;
+	}
 }

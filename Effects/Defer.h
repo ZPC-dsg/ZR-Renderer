@@ -11,6 +11,12 @@ namespace Bind
 {
 	class ShaderProgram;
 	class ImageTexture2D;
+	class StorageTexture2D;
+}
+
+namespace Common
+{
+	class ComputeProxy;
 }
 
 namespace RTREffects
@@ -40,6 +46,7 @@ namespace RTREffects
 
 	private:
 		std::shared_ptr<SceneGraph::ModelProxy> m_proxy;
+		std::shared_ptr<Common::ComputeProxy> m_compute_proxy;
 
 		std::shared_ptr<Bind::ShaderProgram> m_defer_shader;
 		std::shared_ptr<Bind::ShaderProgram> m_compute_shader;
@@ -47,6 +54,8 @@ namespace RTREffects
 		std::shared_ptr<Bind::ImageTexture2D> m_diff_spec_texture;
 		std::shared_ptr<Bind::ImageTexture2D> m_norm_shin_texture;
 		std::shared_ptr<Bind::ImageTexture2D> m_depth_texture;
+
+		std::shared_ptr<Bind::StorageTexture2D> m_output_image;
 
 	private:
 		int m_debug_mode = -1;

@@ -33,6 +33,9 @@ namespace Bind {
 		Bindable() = default;
 
 		virtual std::type_index GetTypeInfo() const noexcept = 0;
+		virtual bool NeedBindingPoint() noexcept;
+		virtual void ChangeBindingPoint(GLuint binding) noexcept;
+		virtual GLint GetBindingPoint() const noexcept;
 
 		static int AllocateID(std::unordered_set<int>& id_set);
 	};

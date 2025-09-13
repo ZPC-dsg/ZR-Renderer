@@ -6,7 +6,7 @@
 
 namespace Common
 {
-	ComputeProxy& ComputeProxy::AddBindable(std::shared_ptr<Bind::Bindable> bindable)
+	ComputeProxy& ComputeProxy::AddBindable(std::shared_ptr<Bind::Bindable> bindable, GLint binding)
 	{
 		auto shader = std::dynamic_pointer_cast<Bind::ShaderProgram>(bindable);
 		auto constant = std::dynamic_pointer_cast<Bind::ConstantBuffer>(bindable);
@@ -30,10 +30,18 @@ namespace Common
 			else
 			{
 				m_constants[buffer_name] = constant;
+				if (binding >= 0)
+				{
+					m_constants_binding_change_list[buffer_name] = GLuint(binding);
+				}
 			}
 		}
 		else
 		{
+			if (bindable->NeedBindingPoint())
+			{
+				m_binding_change_list[m_bindables.size()] = GLuint(binding);
+			}
 			m_bindables.push_back(bindable);
 		}
 
@@ -72,6 +80,19 @@ namespace Common
 
 	void ComputeProxy::BindAll()
 	{
+		for (auto& [index, binding] : m_binding_change_list)
+		{
+			GLuint binding_new = binding;
+			binding = GLuint(m_bindables[index]->GetBindingPoint());
+			m_bindables[index]->ChangeBindingPoint(binding_new);
+		}
+		for (auto& [name, binding] : m_constants_binding_change_list)
+		{
+			GLuint binding_new = binding;
+			binding = GLuint(m_constants[name]->GetBindingPoint());
+			m_constants[name]->ChangeBindingPoint(binding_new);
+		}
+
 		for (auto& bindable : m_bindables)
 		{
 			bindable->Bind();
@@ -99,6 +120,19 @@ namespace Common
 		for (auto& [_, constant] : m_constants)
 		{
 			constant->UnBind();
+		}
+
+		for (auto& [index, binding] : m_binding_change_list)
+		{
+			GLuint binding_old = binding;
+			binding = GLuint(m_bindables[index]->GetBindingPoint());
+			m_bindables[index]->ChangeBindingPoint(binding_old);
+		}
+		for (auto& [name, binding] : m_constants_binding_change_list)
+		{
+			GLuint binding_old = binding;
+			binding = GLuint(m_constants[name]->GetBindingPoint());
+			m_constants[name]->ChangeBindingPoint(binding_old);
 		}
 	}
 }

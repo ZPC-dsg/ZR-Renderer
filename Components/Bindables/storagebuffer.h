@@ -19,6 +19,9 @@ namespace Bind
 
 		std::string GetUID() const noexcept override;
 		std::type_index GetTypeInfo() const noexcept override;
+		bool NeedBindingPoint() noexcept override;
+		GLint GetBindingPoint() const noexcept override;
+		void ChangeBindingPoint(GLuint binding) noexcept override;
 
 	private:
 		std::string m_name;

@@ -31,6 +31,9 @@ namespace Bind {
 		std::type_index GetTypeInfo() const noexcept override;
 
 		inline std::string BufferName() const noexcept { return m_buffer_name; }
+		bool NeedBindingPoint() noexcept override;
+		void ChangeBindingPoint(GLuint binding) noexcept;
+		GLint GetBindingPoint() const noexcept override;
 
 	private:
 		std::shared_ptr<RawBuffer> m_buffer;

@@ -19,6 +19,10 @@ namespace Bind {
 
 		std::string resource_name() const noexcept;
 
+		void ChangeBindingPoint(GLuint binding) noexcept override;
+		GLint GetBindingPoint() const noexcept override;
+		bool NeedBindingPoint() noexcept override;
+
 	protected:
 		static unsigned char* gen_image_from_file(const std::string& path, int& width, int& height, int& channels, bool is_model = false);
 

@@ -24,7 +24,8 @@ namespace Common
 		{ }
 		~ComputeProxy() = default;
 
-		ComputeProxy& AddBindable(std::shared_ptr<Bind::Bindable> bindable);
+		// binding为负代表不改变绑定点。只有纹理或缓冲去有关资源指定binding参数才是有效的
+		ComputeProxy& AddBindable(std::shared_ptr<Bind::Bindable> bindable, GLint binding = -1);
 		ComputeProxy& EditUniform(const std::string& uniform_name);
 		ComputeProxy& EditConstant(const std::string& buffer_name, const std::string& element_name);
 
@@ -42,6 +43,10 @@ namespace Common
 		std::vector<std::shared_ptr<Bind::Bindable>> m_bindables;
 		std::shared_ptr<Bind::ShaderProgram> m_compute_shader;
 		std::unordered_map<std::string, std::shared_ptr<Bind::ConstantBuffer>> m_constants;
+
+		// 记录下m_bindables中会在执行计算任务时改变binding point的资源的原有binding point，在执行完毕之后恢复binding point
+		std::unordered_map<size_t, GLuint> m_binding_change_list;
+		std::unordered_map<std::string, GLuint> m_constants_binding_change_list;
 
 		std::vector<GLuint> m_dimensions;
 

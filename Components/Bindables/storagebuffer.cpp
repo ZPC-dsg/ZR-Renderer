@@ -40,4 +40,19 @@ namespace Bind
 	{
 		return typeid(StorageBuffer);
 	}
+
+	bool StorageBuffer::NeedBindingPoint() noexcept
+	{
+		return true;
+	}
+
+	void StorageBuffer::ChangeBindingPoint(GLuint binding) noexcept
+	{
+		m_binding = binding;
+	}
+
+	GLint StorageBuffer::GetBindingPoint() const noexcept
+	{
+		return (GLint)m_binding;
+	}
 }

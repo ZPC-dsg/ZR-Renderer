@@ -3,7 +3,9 @@
 #include <assimploader.h>
 #include <Bindables/shaderprogram.h>
 #include <Bindables/rendertarget.h>
+#include <Bindables/storagetexture2D.h>
 #include <Common/render_helper.h>
+#include <Common/computeProxy.h>
 
 namespace RTREffects
 {
@@ -116,7 +118,16 @@ namespace RTREffects
 		GLuint comp = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Compute, "render_compute", "Defer", "cull_and_render.comp");
 		m_compute_shader = Bind::ShaderProgram::Resolve("cull_render_shader", { comp });
 
+		OGL_TEXTURE2D_DESC desc;
+		m_output_image = Bind::StorageTexture2D::Resolve("output_image", desc, 0);
 
+		// 暂时不考虑屏幕大小变化，同时屏幕大小一定是16的倍数
+		GLuint sizeX = globalSettings::screen_width / 16;
+		GLuint sizeY = globalSettings::screen_height / 16;
+		m_compute_proxy = std::make_shared<Common::ComputeProxy>(sizeX, sizeY);
+
+		m_compute_proxy->AddBindable(m_compute_shader).AddBindable(m_diff_spec_texture).AddBindable(m_norm_shin_texture)
+			.AddBindable(m_depth_texture);
 	}
 
 	void DeferRenderer::render_defer()

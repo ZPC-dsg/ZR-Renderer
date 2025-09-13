@@ -13,4 +13,21 @@ namespace Bind {
 
 		return -1;
 	}
+
+	bool Bindable::NeedBindingPoint() noexcept
+	{
+		return false;
+	}
+
+	// 默认什么都不做
+	void Bindable::ChangeBindingPoint(GLuint binding) noexcept
+	{
+		return;
+	}
+
+	// -1默认代表没有绑定点
+	GLint Bindable::GetBindingPoint() const noexcept
+	{
+		return -1;
+	}
 }
