@@ -4,8 +4,10 @@
 #include <Bindables/shaderprogram.h>
 #include <Bindables/rendertarget.h>
 #include <Bindables/storagetexture2D.h>
+#include <Bindables/storagebuffer.h>
 #include <Common/render_helper.h>
 #include <Common/computeProxy.h>
+#include <Common/random_generator.h>
 
 namespace RTREffects
 {
@@ -119,15 +121,51 @@ namespace RTREffects
 		m_compute_shader = Bind::ShaderProgram::Resolve("cull_render_shader", { comp });
 
 		OGL_TEXTURE2D_DESC desc;
+		desc.target = GL_TEXTURE_2D;
+		desc.width = globalSettings::screen_width;
+		desc.height = globalSettings::screen_height;
+		desc.internal_format = GL_RGBA16F;
+		desc.cpu_format = GL_RGBA;
+		desc.data_type = GL_FLOAT;
 		m_output_image = Bind::StorageTexture2D::Resolve("output_image", desc, 0);
+
+		// 准备点光源数据
+		struct PointLight
+		{
+			glm::vec3 position;
+			float range;
+			glm::vec3 color;
+			unsigned int _padding;
+		};
+
+		std::vector<PointLight> lights(100);
+		std::vector<glm::vec3> positions = Common::UniformGenerator::Generate({ -20.0f, 0.0f, -20.0f }, { 20.0f, 20.0f, 20.0f }, lights.size());
+		std::vector<float> ranges = Common::UniformGenerator::Generate(2.0f, 10.0f, lights.size());
+		std::vector<glm::vec3> colors = Common::UniformGenerator::Generate({ 0.1f, 0.1f, 0.1f }, { 1.0f, 1.0f, 1.0f }, lights.size());
+		for (size_t i = 0; i < lights.size(); i++)
+		{
+			lights[i].position = positions[i];
+			lights[i].range = ranges[i];
+			lights[i].color = colors[i];
+		}
+
+		auto light_buffer = Bind::StorageBuffer::Resolve("light_buffer", "light_ssbo", lights.size() * sizeof(PointLight), 0, GL_DYNAMIC_STORAGE_BIT);
+		light_buffer->Update((void*)lights.data());
 
 		// 暂时不考虑屏幕大小变化，同时屏幕大小一定是16的倍数
 		GLuint sizeX = globalSettings::screen_width / 16;
 		GLuint sizeY = globalSettings::screen_height / 16;
 		m_compute_proxy = std::make_shared<Common::ComputeProxy>(sizeX, sizeY);
 
-		m_compute_proxy->AddBindable(m_compute_shader).AddBindable(m_diff_spec_texture).AddBindable(m_norm_shin_texture)
-			.AddBindable(m_depth_texture);
+		m_compute_proxy->AddBindable(m_compute_shader).AddBindable(m_output_image).AddBindable(m_diff_spec_texture, 1).AddBindable(m_norm_shin_texture, 2)
+			.AddBindable(m_depth_texture, 3).AddBindable(light_buffer);
+
+		// 更新计算着色器中的uniform数据
+		m_compute_proxy->EditUniform("light_count", (unsigned int)lights.size()).EditUniform("z_near", globalSettings::mainCamera.zNear)
+			.EditUniform("z_far", globalSettings::mainCamera.zFar).EditUniform("screenWidth", (float)globalSettings::screen_width)
+			.EditUniform("screenHeight", (float)globalSettings::screen_height);// 更新计算着色器中的uniform数据
+
+		m_compute_proxy->Finalize();
 	}
 
 	void DeferRenderer::render_defer()

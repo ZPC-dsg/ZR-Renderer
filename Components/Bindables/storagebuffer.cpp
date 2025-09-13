@@ -55,4 +55,11 @@ namespace Bind
 	{
 		return (GLint)m_binding;
 	}
+
+	void StorageBuffer::Update(void* data, size_t offset, size_t size)
+	{
+		Bind();
+		m_buffer->UpdateCopy(size == 0 ? m_size : size, offset, data);
+		UnBind();
+	}
 }

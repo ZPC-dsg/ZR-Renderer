@@ -75,6 +75,12 @@ void RawBuffer::Storage(size_t size, GLbitfield flags) noxnd {
 }
 
 void RawBuffer::UpdateCopy(size_t size, size_t offset, const void* data) noxnd {
+	if (!HasFlag(GL_DYNAMIC_STORAGE_BIT))
+	{
+		LOGE("Buffer resource can not be updated because of lack of flag GL_DYNAMIC_STORAGE_BIT!");
+		assert(false);
+		return;
+	}
 	glNamedBufferSubData(m_resource, offset, size, data);
 }
 

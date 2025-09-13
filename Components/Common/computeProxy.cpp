@@ -48,26 +48,22 @@ namespace Common
 		return *this;
 	}
 
-	ComputeProxy& ComputeProxy::EditUniform(const std::string& uniform)
-	{
-		m_compute_shader->EditUniform(uniform);
-		return *this;
-	}
-
-	ComputeProxy& ComputeProxy::EditConstant(const std::string& buffer_name, const std::string& element_name)
-	{
-		assert(m_constants.contains(buffer_name));
-
-		m_constants[buffer_name]->EditConstant(element_name);
-		return *this;
-	}
-
 	void ComputeProxy::Finalize()
 	{
 		if (!m_compute_shader)
 		{
 			LOGW("No compute shader specified!One shader needed for any compute job!");
 			std::exit(EXIT_FAILURE);
+		}
+
+		// 更新着色器和常量缓冲区
+		m_compute_shader->Bind();
+		m_compute_shader->UnBind();
+		for (auto& [_, buffer] : m_constants)
+		{
+			buffer->Bind();
+			buffer->Update();
+			buffer->UnBind();
 		}
 	}
 
@@ -98,8 +94,7 @@ namespace Common
 			bindable->Bind();
 		}
 
-		m_compute_shader->BindWithoutUpdate();
-		m_compute_shader->UpdateOnly();
+		m_compute_shader->Bind();
 
 		for (auto& [_, constant] : m_constants)
 		{

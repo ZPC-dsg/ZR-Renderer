@@ -23,6 +23,8 @@ namespace Bind
 		GLint GetBindingPoint() const noexcept override;
 		void ChangeBindingPoint(GLuint binding) noexcept override;
 
+		void Update(void* data, size_t offset = 0, size_t size = 0) noxnd;
+
 	private:
 		std::string m_name;
 		GLuint m_binding;

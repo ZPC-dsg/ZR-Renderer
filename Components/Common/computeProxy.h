@@ -1,5 +1,8 @@
 #pragma once
 
+#include <Bindables/shaderprogram.h>
+#include <Bindables/constantbuffer.h>
+
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -26,10 +29,12 @@ namespace Common
 
 		// binding为负代表不改变绑定点。只有纹理或缓冲去有关资源指定binding参数才是有效的
 		ComputeProxy& AddBindable(std::shared_ptr<Bind::Bindable> bindable, GLint binding = -1);
-		ComputeProxy& EditUniform(const std::string& uniform_name);
-		ComputeProxy& EditConstant(const std::string& buffer_name, const std::string& element_name);
+		template<typename T>
+		ComputeProxy& EditUniform(const std::string& uniform_name, T&& value);
+		template<typename T>
+		ComputeProxy& EditConstant(const std::string& buffer_name, const std::string& element_name, T&& value);
 
-		// 在添加完所有的bindable之后调用
+		// 在添加完所有的bindable之后，并且将所有在渲染循环之前的uniform或constant更新好之后调用
 		void Finalize();
 		inline bool IsFinalized() const noexcept { return m_is_finalized; }
 
@@ -52,4 +57,24 @@ namespace Common
 
 		bool m_is_finalized = false;
 	};
+
+	template<typename T>
+	ComputeProxy& ComputeProxy::EditUniform(const std::string& uniform, T&& value)
+	{
+		using type = std::decay_t<T>;
+		static_assert(IsVariantMember<type, AvailableType>::value, "Value type not supported!");
+
+		m_compute_shader->EditUniform(uniform) = std::forward<T>(value);
+		return *this;
+	}
+
+	template<typename T>
+	ComputeProxy& ComputeProxy::EditConstant(const std::string& buffer_name, const std::string& element_name, T&& value)
+	{
+		static_assert(IsVariantMember<T, AvailableType>::value, "Value type not supported!");
+		assert(m_constants.contains(buffer_name));
+
+		m_constants[buffer_name]->EditConstant(element_name) = std::forward<T>(value);
+		return *this;
+	}
 }
