@@ -8,6 +8,9 @@
 // 每个Tile的最大最小深度之间的深度区间划分
 #define DEPTH_INTERVAL_COUNT 32
 
+// 当当前Tile的深度范围小于该阈值时不使用2.5D culling，只使用常规的分块剔除
+#define DEPTH_THRESHOLD 0.1
+
 struct PointLight
 {
     vec3 position; // 注意，这是world space中的位置，需要转换到view space中
@@ -56,6 +59,9 @@ shared uint lightMask[MAX_LIGHTS];
 shared uint lightFinalList[MAX_LIGHTS];
 shared uint lightFinalCount;
 
+// 1代表使用2.5D culling,否则代表使用常规分块剔除
+shared uint fineCulling;
+
 float LinearizeDepth(float depth)
 {
     float z = depth * 2.0 - 1.0; // back to NDC 
@@ -77,8 +83,8 @@ void ConstructFrustumPlane(uvec2 groupID, float minZ, float maxZ, inout vec4 fru
     frustumPlane[1] = row4 + row1;
     frustumPlane[2] = row4 - row2;
     frustumPlane[3] = row4 + row2;
-    frustumPlane[4] = vec4(0.0, 0.0, -1.0, -min_Z);
-    frustumPlane[5] = vec4(0.0, 0.0, 1.0, max_Z);
+    frustumPlane[4] = vec4(0.0, 0.0, -1.0, -minZ);
+    frustumPlane[5] = vec4(0.0, 0.0, 1.0, maxZ);
 
     // 单位化法线
     #pragma unroll
@@ -118,7 +124,7 @@ vec3 pointLightShading(vec3 diffuseColor, float specularColor, float shininess, 
         float light_quadratic = 0.032;
         float attenuation = 1.0 / (light_constant + light_linear * lightDist + light_quadratic * pow(lightDist, 2));
 
-        vec3 contrib = (diffuse + specular) / attenuation;
+        vec3 contrib = (diffuse + specular) * light.color * attenuation;
         finalColor += contrib;
     }
 
@@ -127,7 +133,7 @@ vec3 pointLightShading(vec3 diffuseColor, float specularColor, float shininess, 
 
 vec3 RestoreViewPosition(ivec2 globalID, float linearDepth)
 {
-    vec2 screenPos = vec2(globalID) + vec2(0.5);
+    vec2 screenPos = (vec2(globalID) + vec2(0.5)) / vec2(screenWidth, screenHeight);
     vec2 ndcPos = 2.0 * screenPos - 1.0;
     float viewX = ndcPos.x * linearDepth / proj[0][0];
     float viewY = ndcPos.y * linearDepth / proj[1][1];
@@ -166,6 +172,9 @@ void main()
         min_Z = 0xFFFFFFFF;
         max_Z = 0;
         lightCount = 0;
+        lightFinalCount = 0;
+        Z_bits = 0;
+        fineCulling = 0;
     }
 
     memoryBarrierShared();
@@ -182,8 +191,25 @@ void main()
     float maxLinearZ = uintBitsToFloat(max_Z);
     float currentZ = linearDepth;
     float depthRange = maxLinearZ - minLinearZ;
-    float depthInterval = depthRange / float(DEPTH_INTERVAL_COUNT);
-    Z_bits &= (1 << uint((currentZ - minLinearZ) / float(DEPTH_INTERVAL_COUNT)));
+
+    if (depthRange > DEPTH_THRESHOLD)
+    {
+        if (groupIndex == 0)
+        {
+            fineCulling = 1;
+            
+        }
+        memoryBarrierShared();
+        barrier();
+    }
+
+    float depthInterval;
+    if (fineCulling > 0)
+    {
+        depthInterval = depthRange / float(DEPTH_INTERVAL_COUNT);
+        uint depthBit = 1 << uint((currentZ - minLinearZ) / float(DEPTH_INTERVAL_COUNT));
+        atomicOr(Z_bits, depthBit);
+    }
 
     vec4 frustum[6];
     ConstructFrustumPlane(groupID, minLinearZ, maxLinearZ, frustum);
@@ -198,16 +224,23 @@ void main()
         for (uint k = 0; k < 6; k++)
         {
             vec3 lightPosition = vec3(view * vec4(light.position, 1.0));
-            float d = dot(frustum[i], vec4(lightPosition, 1.0));
+            float d = dot(frustum[k], vec4(lightPosition, 1.0));
             inFrustum = inFrustum && (d >= -light.range);
         }
 
         if (inFrustum)
         {
             uint lightIndex = atomicAdd(lightCount, 1);
+            if (lightIndex >= MAX_LIGHTS)
+            {
+                break;
+            }
             lightList[lightIndex] = i;
         }
     }
+
+    memoryBarrierShared();
+    barrier();
 
     // 初始化光源mask
     if (groupIndex < lightCount)
@@ -218,40 +251,54 @@ void main()
     memoryBarrierShared();
     barrier();
 
-    // 生成光源掩码
-    // 由于当前设置MAX_LIGHTS为8，正好可以做到一个线程负责一个光源的一个深度区间的掩码生成
-    uint threadSum = 32 * lightCount;
-    if (groupIndex < threadSum)
+    if (fineCulling > 0)
     {
-        uint lightIndex = groupIndex / 32;
-        uint depthIndex = groupIndex - lightIndex * 32;
-
-        float depth_near = minLinearZ + float(depthIndex) * depthInterval;
-        float depth_far = depth_near + depthInterval;
-
-        PointLight targetLight = lightBuffer.lights[lightList[lightIndex]];
-        vec3 lightPosition = vec3(view * vec4(targetLight.position, 1.0));
-        float light_near = abs(lightPosition.z) - targetLight.range;
-        float light_far = abs(lightPosition.z) + targetLight.range;
-
-        if ((light_near < depth_far) && (light_far > depth_near))
+        // 生成光源掩码
+        // 由于当前设置MAX_LIGHTS为8，正好可以做到一个线程负责一个光源的一个深度区间的掩码生成
+        uint threadSum = 32 * lightCount;
+        if (groupIndex < threadSum)
         {
-            lightMask[lightIndex] &= (1 << depthIndex);
+            uint lightIndex = groupIndex / 32;
+            uint depthIndex = groupIndex - lightIndex * 32;
+
+            float depth_near = minLinearZ + float(depthIndex) * depthInterval;
+            float depth_far = depth_near + depthInterval;
+
+            PointLight targetLight = lightBuffer.lights[lightList[lightIndex]];
+            vec3 lightPosition = vec3(view * vec4(targetLight.position, 1.0));
+            float light_near = abs(lightPosition.z) - targetLight.range;
+            float light_far = abs(lightPosition.z) + targetLight.range;
+
+            if ((light_near < depth_far) && (light_far > depth_near))
+            {
+                lightMask[lightIndex] |= (1 << depthIndex);
+            }
         }
+
+        memoryBarrierShared();
+        barrier();
+
+        // 进一步剔除光源
+        if (groupIndex < lightCount && ((Z_bits & lightMask[groupIndex]) > 0))
+        {
+            uint finalIndex = atomicAdd(lightFinalCount, 1);
+            lightFinalList[finalIndex] = lightList[groupIndex];
+        }
+
+        memoryBarrierShared();
+        barrier();
     }
-
-    memoryBarrierShared();
-    barrier();
-
-    // 进一步剔除光源
-    if (groupIndex < lightCount && ((Z_bits & lightMask[groupIndex]) > 0))
+    else
     {
-        uint finalIndex = atomicAdd(lightFinalCount, 1);
-        lightFinalList[finalIndex] = lightList[groupIndex];
-    }
+        if (groupIndex < lightCount)
+        {
+            uint finalIndex = atomicAdd(lightFinalCount, 1);
+            lightFinalList[finalIndex] = lightList[groupIndex];
+        }
 
-    memoryBarrierShared();
-    barrier();
+        memoryBarrierShared();
+        barrier();
+    }
 
     // 最终着色
     vec3 finalColor = pointLightShading(diffuse_color, specular, shininess, shininess_strength, normal, RestoreViewPosition(globalCoord, currentZ));

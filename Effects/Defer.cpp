@@ -139,8 +139,8 @@ namespace RTREffects
 		};
 
 		std::vector<PointLight> lights(100);
-		std::vector<glm::vec3> positions = Common::UniformGenerator::Generate({ -20.0f, 0.0f, -20.0f }, { 20.0f, 20.0f, 20.0f }, lights.size());
-		std::vector<float> ranges = Common::UniformGenerator::Generate(2.0f, 10.0f, lights.size());
+		std::vector<glm::vec3> positions = Common::UniformGenerator::Generate({ -50.0f, 0.0f, -50.0f }, { 50.0f, 50.0f, 50.0f }, lights.size());
+		std::vector<float> ranges = Common::UniformGenerator::Generate(10.0f, 40.0f, lights.size());
 		std::vector<glm::vec3> colors = Common::UniformGenerator::Generate({ 0.1f, 0.1f, 0.1f }, { 1.0f, 1.0f, 1.0f }, lights.size());
 		for (size_t i = 0; i < lights.size(); i++)
 		{
