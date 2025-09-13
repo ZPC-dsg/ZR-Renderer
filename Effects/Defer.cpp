@@ -113,6 +113,9 @@ namespace RTREffects
 
 	void DeferRenderer::prepare_compute()
 	{
+		GLuint comp = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Compute, "render_compute", "Defer", "cull_and_render.comp");
+		m_compute_shader = Bind::ShaderProgram::Resolve("cull_render_shader", { comp });
+
 
 	}
 

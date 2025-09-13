@@ -232,6 +232,9 @@ namespace Dynamic {
 			case GL_IMAGE_BUFFER:
 			case GL_INT_IMAGE_BUFFER:
 			case GL_UNSIGNED_INT_IMAGE_BUFFER:
+			case GL_IMAGE_1D:
+			case GL_IMAGE_2D:
+			case GL_IMAGE_3D:
 			case GL_INT_IMAGE_1D:
 			case GL_INT_IMAGE_2D:
 			case GL_INT_IMAGE_3D:
