@@ -1,0 +1,256 @@
+#version 450 core
+
+#define COMPUTE_SHADER_TILE_GROUP_DIM 16
+#define COMPUTE_SHADER_TILE_GROUP_SIZE (COMPUTE_SHADER_TILE_GROUP_DIM * COMPUTE_SHADER_TILE_GROUP_DIM)
+
+// 一个分块最多允许多少个点光源影响
+#define MAX_LIGHTS 8
+// 每个Tile的最大最小深度之间的深度区间划分
+#define DEPTH_INTERVAL_COUNT 32
+
+struct PointLight
+{
+    vec3 position; // 注意，这是view space中的位置，不是world space中的位置！
+    float range;
+    vec3 color;
+    float _padding;
+};
+
+// 存储所有点光源数据
+layout (std430, binding = 0) buffer LightBuffer
+{
+    PointLight lights[];
+} lightBuffer;
+
+uniform uint light_count;
+
+// 渲染结果
+layout (binding = 0, rgba16f) uniform image2D outputImage;
+
+// G-Buffers
+layout (binding = 1) uniform sampler2D diff_spec_texture;
+layout (binding = 2) uniform sampler2D norm_shin_texture; // 注意，这里的normal是world space中的，需要转换到view space中
+layout (binding = 3) uniform sampler2D depth_texture;
+
+uniform mat4 view;
+
+uniform float z_near;
+uniform float z_far;
+uniform mat4 proj;
+
+uniform float screenWidth;
+uniform float screenHeight;
+
+shared uint min_Z;
+shared uint max_Z;
+// 把min_Z到max_Z中的范围分成32个区间，该变量保存有深度值的区间
+shared uint Z_bits;
+
+// 初步剔除后当前Tile光照列表和光源数
+shared uint lightList[MAX_LIGHTS];
+shared uint lightCount;
+// 每个经过初步剔除后的光源的深度掩码
+shared uint lightMask[MAX_LIGHTS];
+
+// 2.5D-Culling后最终的光源
+shared uint lightFinalList[MAX_LIGHTS];
+shared uint lightFinalCount;
+
+float LinearizeDepth(float depth)
+{
+    float z = depth * 2.0 - 1.0; // back to NDC 
+    return (2.0 * z_near * z_far) / (z_near + z_far - z * (z_far - z_near));
+}
+
+// minZ,maxZ均是正的（因为计算它们使用的近远平面是正的）
+void ConstructFrustumPlane(uvec2 groupID, float minZ, float maxZ, inout vec4 frustumPlane[6])
+{
+    vec2 projScale = vec2(screenWidth, screenHeight) / float(COMPUTE_SHADER_TILE_GROUP_DIM);
+    vec2 projBias = projScale - 1.0 - 2.0 * vec2(groupID);
+
+    vec4 row1 = vec4(proj[0][0] * projScale.x, 0.0, projBias.x, 0.0);
+    vec4 row2 = vec4(0.0, proj[1][1] * projScale.y, projBias.y, 0.0);
+    vec4 row4 = vec4(0.0, 0.0, -1.0, 0.0);
+
+    // 法线均向视锥体内
+    frustumPlane[0] = row4 - row1;
+    frustumPlane[1] = row4 + row1;
+    frustumPlane[2] = row4 - row2;
+    frustumPlane[3] = row4 + row2;
+    frustumPlane[4] = vec4(0.0, 0.0, -1.0, -min_Z);
+    frustumPlane[5] = vec4(0.0, 0.0, 1.0, max_Z);
+
+    // 单位化法线
+    #pragma unroll
+    for (int i = 0; i < 4; i++)
+    {
+        frustumPlane[i] *= 1.0 / length(frustumPlane[i].xyz);
+    }
+}
+
+vec3 pointLightShading(vec3 diffuseColor, float specularColor, float shininess, float shininessStrength, vec3 normal, vec3 viewPosition)
+{
+    vec3 ambient = vec3(0.1) * diffuseColor;
+    vec3 finalColor = ambient;
+
+    for (uint i = 0; i < lightFinalCount; i++)
+    {
+        PointLight light = lightBuffer.lights[lightFinalList[i]];
+
+        float lightDist = length(light.position - viewPosition);
+        if (light.range < lightDist)
+        {
+            continue;
+        }
+        vec3 lightDir = normalize(light.position - viewPosition);
+
+        float NoL = max(0.0, dot(normal, lightDir));
+        vec3 diffuse = diffuseColor * NoL;
+
+        vec3 cameraDir = normalize(-viewPosition);
+        vec3 H = normalize(lightDir + cameraDir);
+        float NoH = max(dot(normal, H), 0.0);
+        vec3 specular = vec3(specularColor * shininessStrength * pow(NoH, shininess));
+
+        float light_constant = 1.0;
+        float light_linear = 0.09;
+        float light_quadratic = 0.032;
+        float attenuation = 1.0 / (light_constant + light_linear * lightDist + light_quadratic * pow(lightDist, 2));
+
+        vec3 contrib = (diffuse + specular) / attenuation;
+        finalColor += contrib;
+    }
+
+    return finalColor;
+}
+
+vec3 RestoreViewPosition(ivec2 globalID, float linearDepth)
+{
+    vec2 screenPos = vec2(globalID) + vec2(0.5);
+    vec2 ndcPos = 2.0 * screenPos - 1.0;
+    float viewX = ndcPos.x * linearDepth / proj[0][0];
+    float viewY = ndcPos.y * linearDepth / proj[1][1];
+
+    return vec3(viewX, viewY, -linearDepth);
+}
+
+layout (local_size_x = COMPUTE_SHADER_TILE_GROUP_DIM, local_size_y = COMPUTE_SHADER_TILE_GROUP_DIM) in;
+
+void main()
+{
+    ivec2 globalCoord = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 localCoord = ivec2(gl_LocalInvocationID.xy);
+    uvec2 groupID = gl_WorkGroupID.xy;
+    uint groupIndex = int(gl_LocalInvocationIndex);
+
+    vec4 diff_spec = texelFetch(diff_spec_texture, globalCoord, 0);
+    vec4 norm_shin = texelFetch(norm_shin_texture, globalCoord, 0);
+    float depth = texelFetch(depth_texture, globalCoord, 0).r;
+    float linearDepth = LinearizeDepth(depth);
+
+    vec3 diffuse_color = diff_spec.rgb;
+    float specular = diff_spec.a;
+
+    vec2 normalXY = norm_shin.xy;
+    float normalZ = sqrt(clamp(1.0 - dot(normalXY, normalXY), 0.0, 1.0));
+    vec3 normal = normalize(mat3(view) * normalize(vec3(normalXY, normalZ)));
+
+    // 暂时写死
+    float shininess = 16.0;
+    float shininess_strength = 1.0;
+
+    // 初始化共享便变量
+    if (localCoord == ivec2(0, 0))
+    {
+        min_Z = 0xFFFFFFFF;
+        max_Z = 0;
+        lightCount = 0;
+    }
+
+    memoryBarrierShared();
+    barrier();
+
+    atomicMin(min_Z, floatBitsToUint(linearDepth));
+    atomicMax(max_Z, floatBitsToUint(linearDepth));
+
+    memoryBarrierShared();
+    barrier();
+
+    // 生成深度掩码
+    float minLinearZ = uintBitsToFloat(min_Z);
+    float maxLinearZ = uintBitsToFloat(max_Z);
+    float currentZ = linearDepth;
+    float depthRange = maxLinearZ - minLinearZ;
+    float depthInterval = depthRange / float(DEPTH_INTERVAL_COUNT);
+    Z_bits &= (1 << uint((currentZ - minLinearZ) / float(DEPTH_INTERVAL_COUNT)));
+
+    vec4 frustum[6];
+    ConstructFrustumPlane(groupID, minLinearZ, maxLinearZ, frustum);
+
+    // 初步剔除光源
+    for (uint i = groupIndex; i < light_count; i += COMPUTE_SHADER_TILE_GROUP_SIZE)
+    {
+        PointLight light = lightBuffer.lights[i];
+
+        bool inFrustum = true;
+        #pragma unroll
+        for (uint k = 0; k < 6; k++)
+        {
+            float d = dot(frustum[i], vec4(light.position, 1.0));
+            inFrustum = inFrustum && (d >= -light.range);
+        }
+
+        if (inFrustum)
+        {
+            uint lightIndex = atomicAdd(lightCount, 1);
+            lightList[lightIndex] = i;
+        }
+    }
+
+    // 初始化光源mask
+    if (groupIndex < lightCount)
+    {
+        lightMask[groupIndex] = 0;
+    }
+
+    memoryBarrierShared();
+    barrier();
+
+    // 生成光源掩码
+    // 由于当前设置MAX_LIGHTS为8，正好可以做到一个线程负责一个光源的一个深度区间的掩码生成
+    uint threadSum = 32 * lightCount;
+    if (groupIndex < threadSum)
+    {
+        uint lightIndex = groupIndex / 32;
+        uint depthIndex = groupIndex - lightIndex * 32;
+
+        float depth_near = minLinearZ + float(depthIndex) * depthInterval;
+        float depth_far = depth_near + depthInterval;
+
+        PointLight targetLight = lightBuffer.lights[lightList[lightIndex]];
+        float light_near = abs(targetLight.position.z) - targetLight.range;
+        float light_far = abs(targetLight.position.z) + targetLight.range;
+
+        if ((light_near < depth_far) && (light_far > depth_near))
+        {
+            lightMask[lightIndex] &= (1 << depthIndex);
+        }
+    }
+
+    memoryBarrierShared();
+    barrier();
+
+    // 进一步剔除光源
+    if (groupIndex < lightCount && ((Z_bits & lightMask[groupIndex]) > 0))
+    {
+        uint finalIndex = atomicAdd(lightFinalCount, 1);
+        lightFinalList[finalIndex] = lightList[groupIndex];
+    }
+
+    memoryBarrierShared();
+    barrier();
+
+    // 最终着色
+    vec3 finalColor = pointLightShading(diffuse_color, specular, shininess, shininess_strength, normal, RestoreViewPosition(globalCoord, currentZ));
+    imageStore(outputImage, globalCoord, vec4(finalColor, 1.0));
+}
