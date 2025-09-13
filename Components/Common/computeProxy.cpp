@@ -1,0 +1,104 @@
+#include <Common/computeProxy.h>
+
+#include <Bindables/shaderprogram.h>
+#include <Bindables/constantbuffer.h>
+#include <logging.h>
+
+namespace Common
+{
+	ComputeProxy& ComputeProxy::AddBindable(std::shared_ptr<Bind::Bindable> bindable)
+	{
+		auto shader = std::dynamic_pointer_cast<Bind::ShaderProgram>(bindable);
+		auto constant = std::dynamic_pointer_cast<Bind::ConstantBuffer>(bindable);
+
+		if (shader)
+		{
+			if (m_compute_shader)
+			{
+				LOGW("Compute shader already exists!Only one shader allowed for a compute proxy!");
+				std::exit(EXIT_FAILURE);
+			}
+			m_compute_shader = shader;
+		}
+		else if (constant)
+		{
+			if (std::string buffer_name = constant->BufferName(); m_constants.contains(buffer_name))
+			{
+				LOGW("Constant buffer name: {} already exists!", buffer_name.c_str());
+				std::exit(EXIT_FAILURE);
+			}
+			else
+			{
+				m_constants[buffer_name] = constant;
+			}
+		}
+		else
+		{
+			m_bindables.push_back(bindable);
+		}
+
+		return *this;
+	}
+
+	ComputeProxy& ComputeProxy::EditUniform(const std::string& uniform)
+	{
+		m_compute_shader->EditUniform(uniform);
+		return *this;
+	}
+
+	ComputeProxy& ComputeProxy::EditConstant(const std::string& buffer_name, const std::string& element_name)
+	{
+		assert(m_constants.contains(buffer_name));
+
+		m_constants[buffer_name]->EditConstant(element_name);
+		return *this;
+	}
+
+	void ComputeProxy::Finalize()
+	{
+		if (!m_compute_shader)
+		{
+			LOGW("No compute shader specified!One shader needed for any compute job!");
+			std::exit(EXIT_FAILURE);
+		}
+	}
+
+	void ComputeProxy::Dispatch()
+	{
+		BindAll();
+		glDispatchCompute(m_dimensions[0], m_dimensions[1], m_dimensions[2]);
+		UnBindAll();
+	}
+
+	void ComputeProxy::BindAll()
+	{
+		for (auto& bindable : m_bindables)
+		{
+			bindable->Bind();
+		}
+
+		m_compute_shader->BindWithoutUpdate();
+		m_compute_shader->UpdateOnly();
+
+		for (auto& [_, constant] : m_constants)
+		{
+			constant->Update();
+			constant->Bind();
+		}
+	}
+
+	void ComputeProxy::UnBindAll()
+	{
+		for (auto& bindable : m_bindables)
+		{
+			bindable->UnBind();
+		}
+
+		m_compute_shader->UnBind();
+
+		for (auto& [_, constant] : m_constants)
+		{
+			constant->UnBind();
+		}
+	}
+}
