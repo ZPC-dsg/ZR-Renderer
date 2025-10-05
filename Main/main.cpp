@@ -11,10 +11,10 @@ int main() {
 	init();
 
 	// RTREffects::PBR_IBL app("PBR");
-	// RTREffects::OIT app("OIT");
+	RTREffects::OIT app("OIT");
 	// ModelTest app("scene");
 	// TestConstant app;
-	RTREffects::DeferRenderer app("Defer_Renderer");
+	// RTREffects::DeferRenderer app("Defer_Renderer");
 	app.start();
 
 	fin();

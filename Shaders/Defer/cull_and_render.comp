@@ -192,6 +192,7 @@ void main()
     float currentZ = linearDepth;
     float depthRange = maxLinearZ - minLinearZ;
 
+    /*
     if (depthRange > DEPTH_THRESHOLD)
     {
         if (groupIndex == 0)
@@ -202,6 +203,7 @@ void main()
         memoryBarrierShared();
         barrier();
     }
+    */
 
     float depthInterval;
     if (fineCulling > 0)
