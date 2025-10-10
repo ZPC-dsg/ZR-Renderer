@@ -20,7 +20,7 @@ namespace Bind {
 }
 
 namespace SceneGraph {
-	//控制节点中需要储存一系列的函数来指导不同类型的着色器变量信息的生成和更新
+	// 控制节点中需要储存一系列的函数来指导不同类型的着色器变量信息的生成和更新
 	enum class ConfigurationType {
 		Transformation,
 		TextureStrength,
@@ -32,6 +32,8 @@ namespace SceneGraph {
 		MaterialOpacity,
 		MaterialShininess,
 		MaterialShiniStrength,
+		MaterialMetallic,
+		MaterialRoughness,
 	};
 
 #define DEFAULT_VALUE_GENERATOR \
@@ -43,7 +45,9 @@ namespace SceneGraph {
 	X(ConfigurationType::MaterialOpacity, float, 1.0f) \
 	X(ConfigurationType::MaterialShininess, float, 64.0f) \
 	X(ConfigurationType::MaterialShiniStrength, float, 0.08f) \
-	X(ConfigurationType::TextureStrength, float, 1.0f)
+	X(ConfigurationType::TextureStrength, float, 1.0f) \
+	X(ConfigurationType::MaterialMetallic, float, 0.0f) \
+	X(ConfigurationType::MaterialRoughness, float, 0.2f)
 
 	template<enum ConfigurationType> struct DefaultMapper { static constexpr bool is_valid = false; };
 
@@ -70,7 +74,9 @@ namespace SceneGraph {
 	X(ConfigurationType::MaterialTransparent, glm::vec3, m_transparent, UniConstTransparentFunc) \
 	X(ConfigurationType::MaterialOpacity, float, m_opacity, UniConstOpacityFunc) \
 	X(ConfigurationType::MaterialShininess, float, m_shininess, UniConstShininessFunc) \
-	X(ConfigurationType::MaterialShiniStrength, float, m_shininess_strength, UniConstShiniStrengthFunc)
+	X(ConfigurationType::MaterialShiniStrength, float, m_shininess_strength, UniConstShiniStrengthFunc) \
+	X(ConfigurationType::MaterialMetallic, float, m_metallic, UniConstMetallicFunc) \
+	X(ConfigurationType::MaterialRoughness, float, m_roughness, UniConstRoughnessFunc)
 
 	class ControlNode;
 

@@ -31,5 +31,5 @@ void main()
 
     temp[2] = sqrt(clamp(1.0 - temp[0] * temp[0] - temp[1] * temp[1], 0.0, 1.0));
     
-    FragColor = vec4(temp[0], temp[1], temp[2], 1.0);
+    FragColor = vec4(temp[0] * 0.5 + 0.5, temp[1] * 0.5 + 0.5, temp[2] * 0.5 + 0.5, 1.0);
 }

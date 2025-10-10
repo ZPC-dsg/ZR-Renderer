@@ -198,6 +198,7 @@
     <ClInclude Include="Dynamic\shader_reflection.h" />
     <ClInclude Include="Dynamic\shader_reflection_resolver.h" />
     <ClInclude Include="geometry.h" />
+    <ClInclude Include="gfxdebug_helper.h" />
     <ClInclude Include="init.h" />
     <ClInclude Include="Jobber\technique_probe.h" />
     <ClInclude Include="light.h" />
@@ -207,6 +208,8 @@
     <ClInclude Include="mesh.h" />
     <ClInclude Include="models.h" />
     <ClInclude Include="ogl_structures.h" />
+    <ClInclude Include="Pipeline\defer.h" />
+    <ClInclude Include="Pipeline\postprocess.h" />
     <ClInclude Include="resourcefactory.h" />
     <ClInclude Include="SceneGraph\drawableproxy.h" />
     <ClInclude Include="SceneGraph\material.h" />
@@ -276,6 +279,8 @@
     <ClCompile Include="nocopyable.cpp" />
     <ClCompile Include="nocopyable.h" />
     <ClCompile Include="ogl_structures.cpp" />
+    <ClCompile Include="Pipeline\defer.cpp" />
+    <ClCompile Include="Pipeline\postprocess.cpp" />
     <ClCompile Include="resourcefactory.cpp" />
     <ClCompile Include="SceneGraph\drawableproxy.cpp" />
     <ClCompile Include="SceneGraph\material.cpp" />

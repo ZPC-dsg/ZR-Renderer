@@ -70,6 +70,15 @@
     <Filter Include="Common\源文件">
       <UniqueIdentifier>{d32ab770-6d02-46f8-a28e-e87f91060f9c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Pipeline">
+      <UniqueIdentifier>{4febd24d-2a79-4afe-8050-a25e7b05efa5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pipeline\头文件">
+      <UniqueIdentifier>{d4f5c306-b58f-49f6-9c2d-3bca7a694bf8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pipeline\源文件">
+      <UniqueIdentifier>{963647f6-57aa-41c4-afc7-44dd6326f42f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
@@ -282,6 +291,15 @@
     <ClInclude Include="Common\computeProxy.h">
       <Filter>Common\头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Pipeline\defer.h">
+      <Filter>Pipeline\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Pipeline\postprocess.h">
+      <Filter>Pipeline\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="gfxdebug_helper.h">
+      <Filter>Macros</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="storageimage.cpp">
@@ -490,6 +508,12 @@
     </ClCompile>
     <ClCompile Include="Common\computeProxy.cpp">
       <Filter>Common\源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Pipeline\defer.cpp">
+      <Filter>Pipeline\源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Pipeline\postprocess.cpp">
+      <Filter>Pipeline\源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

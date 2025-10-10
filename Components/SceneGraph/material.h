@@ -101,6 +101,8 @@ namespace SceneGraph {
 		float m_opacity = 1.0;
 		float m_shininess = 64.0;//phong光照模型中镜面反射项的幂次系数
 		float m_shininess_strength = 0.08;//放缩镜面反射的颜色强度
+		float m_metallic = 0.0;
+		float m_roughness = 0.2;
 
 		static std::unordered_map<aiBlendMode, MatBlendMode> m_blendmodemap;
 		static std::unordered_map<aiShadingMode, MatShadingMode> m_shadingmap;
