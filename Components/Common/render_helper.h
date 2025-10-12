@@ -30,6 +30,10 @@ namespace Common
 				LOGW("No channel specified for output!");
 				std::exit(EXIT_FAILURE);
 			}
+
+			GLuint binding = image->GetBindingPoint();
+			image->ChangeBindingPoint(0);
+
 			auto vert = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "rendertexture_vertex", "Common", "render_texture.vert");
 			auto frag = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "rendertexture_fragment", "Common", "render_texture.frag");
 			auto shader = Bind::ShaderProgram::Resolve("rendertexture_shader", std::vector<GLuint>{vert, frag});
@@ -61,6 +65,7 @@ namespace Common
 
 			shader->UnBind();
 			image->UnBind();
+			image->ChangeBindingPoint(binding);
 			if (frame)
 			{
 				frame->UnBind();
@@ -72,6 +77,9 @@ namespace Common
 		// 另外，要求texture在pack的时候一定是按顺序pack前两个分量
 		static void RenderUnitVectorToScreen(std::shared_ptr<Bind::ImageTexture2D> image, uint8_t channels = 0xC, std::shared_ptr<Bind::RenderTarget> frame = nullptr, bool clear_depth = true, bool clear_stencil = false)
 		{
+			GLuint binding = image->GetBindingPoint();
+			image->ChangeBindingPoint(0); 
+
 			auto vert = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "renderunitvector_vertex", "Common", "render_texture.vert");
 			auto frag = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "renderunitvector_fragment", "Common", "render_unit.frag");
 			auto shader = Bind::ShaderProgram::Resolve("renderunitvector_shader", std::vector<GLuint>{vert, frag});
@@ -103,6 +111,7 @@ namespace Common
 
 			shader->UnBind();
 			image->UnBind();
+			image->ChangeBindingPoint(binding);
 			if (frame)
 			{
 				frame->UnBind();
@@ -112,6 +121,9 @@ namespace Common
 		// 默认depth在第一个分量
 		static void RenderLinearDepthToScreen(std::shared_ptr<Bind::ImageTexture2D> depth_image, float near_plane, float far_plane, std::shared_ptr<Bind::RenderTarget> frame = nullptr, bool clear_depth = true, bool clear_stencil = false)
 		{
+			GLuint binding = depth_image->GetBindingPoint();
+			depth_image->ChangeBindingPoint(0);
+
 			auto vert = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "renderlineardepth_vertex", "Common", "render_texture.vert");
 			auto frag = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "renderlineardepth_fragment", "Common", "render_linear_depth.frag");
 			auto shader = Bind::ShaderProgram::Resolve("renderlineardepth_shader", std::vector<GLuint>{vert, frag});
@@ -144,10 +156,16 @@ namespace Common
 
 			shader->UnBind();
 			depth_image->UnBind();
+			depth_image->ChangeBindingPoint(binding);
 			if (frame)
 			{
 				frame->UnBind();
 			}
+		}
+
+		static void RenderSimpleQuad()
+		{
+			Get().full_screen_plane.Draw();
 		}
 
 	private:

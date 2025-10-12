@@ -4,13 +4,13 @@
 #include <stb_image.h>
 
 namespace Bind {
-	AbstractTexture::AbstractTexture(const OGL_TEXTURE_PARAMETER& param, GLuint unit)
-		:m_params(param), m_unit(unit)
+	AbstractTexture::AbstractTexture(const OGL_TEXTURE_PARAMETER& param, GLuint unit, const std::string& tag)
+		:m_params(param), m_unit(unit), m_tag(tag)
 	{
 	}
 
-	AbstractTexture::AbstractTexture(std::shared_ptr<RawTexture2D> resource, const OGL_TEXTURE_PARAMETER& param, GLuint unit)
-		:m_params(param), m_unit(unit), m_resource(resource)
+	AbstractTexture::AbstractTexture(std::shared_ptr<RawTexture2D> resource, const OGL_TEXTURE_PARAMETER& param, GLuint unit, const std::string& tag)
+		:m_params(param), m_unit(unit), m_resource(resource), m_tag(tag)
 	{
 	}
 

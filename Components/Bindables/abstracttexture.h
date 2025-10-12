@@ -7,8 +7,8 @@ namespace Bind {
 	class AbstractTexture :public Bindable {
 		friend class RenderTarget;
 	public:
-		AbstractTexture(const OGL_TEXTURE_PARAMETER& param, GLuint unit);
-		AbstractTexture(std::shared_ptr<RawTexture2D> resource, const OGL_TEXTURE_PARAMETER& param, GLuint unit);
+		AbstractTexture(const OGL_TEXTURE_PARAMETER& param, GLuint unit, const std::string& tag = "");
+		AbstractTexture(std::shared_ptr<RawTexture2D> resource, const OGL_TEXTURE_PARAMETER& param, GLuint unit, const std::string& tag = "");
 		~AbstractTexture() = default;
 
 		inline OGL_TEXTURE_PARAMETER get_parameter() const noexcept { return m_params; }
@@ -18,6 +18,7 @@ namespace Bind {
 		bool is_depth_only() const noexcept;
 
 		std::string resource_name() const noexcept;
+		inline std::string Tag() const noexcept { return m_tag; }
 
 		void ChangeBindingPoint(GLuint binding) noexcept override;
 		GLint GetBindingPoint() const noexcept override;
@@ -29,6 +30,7 @@ namespace Bind {
 	protected:
 		OGL_TEXTURE_PARAMETER m_params;
 		GLuint m_unit;
+		std::string m_tag;
 
 		std::shared_ptr<RawTexture2D> m_resource;
 	};

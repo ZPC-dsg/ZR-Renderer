@@ -114,7 +114,9 @@ namespace Dynamic {
 #undef X
 			case LeafType::Struct:
 				return static_cast<ConstantExtraData::Struct&>(*m_extradata).m_elements.back().second.GetOffsetEnd();
+			case LeafType::Array:
 				return static_cast<ConstantExtraData::Array&>(*m_extradata).m_elements.back().GetOffsetEnd();
+			default:
 				assert("Invalid element type to retrieve offset!" && false);
 				return 0;
 			}
@@ -535,6 +537,16 @@ namespace Dynamic {
 
 		ConstConstantElementRef CPUConstantBuffer::operator[](const std::string& key) const noxnd {
 			return const_cast<CPUConstantBuffer&>(*this)[key];
+		}
+
+		ConstantElementRef CPUConstantBuffer::operator[](size_t index) noxnd
+		{
+			return ConstantElementRef(&(*m_root)[index], m_data.data());
+		}
+
+		ConstConstantElementRef CPUConstantBuffer::operator[](size_t index) const noxnd
+		{
+			return const_cast<CPUConstantBuffer&>(*this)[index];
 		}
 
 		void CPUConstantBuffer::CopyFrom(const CPUConstantBuffer& rhs) noxnd {

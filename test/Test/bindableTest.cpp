@@ -16,7 +16,7 @@ void BindableTest::prepare() {
 	OGL_TEXTURE2D_DESC desc = m_texture->get_description();
 	m_framebuffer = std::make_unique<Bind::RenderTarget>("framebuffer", desc.width, desc.height);
 	m_framebuffer->AppendTexture<GL_TEXTURE_2D>("rendertarget").AppendDepthComponent<GL_RENDERBUFFER>("depth").CheckCompleteness();
-	m_rendertarget = m_framebuffer->get_texture_image<Bind::ImageTexture2D>("rendertarget", OGL_TEXTURE_PARAMETER{}, 1);
+	m_rendertarget = m_framebuffer->get_texture_image<Bind::ImageTexture2D>("tex", "rendertarget", OGL_TEXTURE_PARAMETER{}, 1);
 
 	m_box = std::make_unique<Box>();
 	m_box->set_model(glm::mat4(1.0));

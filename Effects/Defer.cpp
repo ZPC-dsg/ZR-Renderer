@@ -99,9 +99,9 @@ namespace RTREffects
 			.AppendTexture<GL_TEXTURE_2D>("normal_shininess_texture", {}, 1, 1, GL_RGBA16F)
 			.AppendDepthComponent<GL_TEXTURE_2D>("depth_texture", 1, GL_DEPTH_COMPONENT32F);
 
-		m_diff_spec_texture = defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("diffuse_specular_texture", {}, 0);
-		m_norm_shin_texture = defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("normal_shininess_texture", {}, 0);
-		m_depth_texture = defer_framebuffer->get_texture_depthstencil<Bind::ImageTexture2D>({}, 0);
+		m_diff_spec_texture = defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("diff_spec", "diffuse_specular_texture", {}, 0);
+		m_norm_shin_texture = defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("norm_shini", "normal_shininess_texture", {}, 0);
+		m_depth_texture = defer_framebuffer->get_texture_depthstencil<Bind::ImageTexture2D>("depth", {}, 0);
 
 		m_proxy->AddRootBindable(m_defer_shader).AddRootBindable(defer_framebuffer);
 

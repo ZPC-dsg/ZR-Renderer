@@ -36,8 +36,8 @@ namespace Bind {
 		LOGI("Loading finished!");
 	}
 
-	ImageTexture2D::ImageTexture2D(std::shared_ptr<RawTexture2D> texture2D, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip)
-		:AbstractTexture(texture2D, param, unit) {
+	ImageTexture2D::ImageTexture2D(const std::string& tag, std::shared_ptr<RawTexture2D> texture2D, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip)
+		:AbstractTexture(texture2D, param, unit, tag) {
 		m_resource->SetParameters(param);
 		if (generate_mip) {
 			m_resource->GenerateMips();
@@ -56,8 +56,8 @@ namespace Bind {
 		return BindableResolver::Resolve<ImageTexture2D>(tag, path, param, unit, is_model, generate_mip);
 	}
 
-    std::shared_ptr<ImageTexture2D> ImageTexture2D::Resolve(std::shared_ptr<RawTexture2D> texture2D, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip ) {
-		return BindableResolver::Resolve<ImageTexture2D>(texture2D, param, unit, generate_mip);
+    std::shared_ptr<ImageTexture2D> ImageTexture2D::Resolve(const std::string& tag, std::shared_ptr<RawTexture2D> texture2D, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip ) {
+		return BindableResolver::Resolve<ImageTexture2D>(tag, texture2D, param, unit, generate_mip);
 	}
 
 	std::string ImageTexture2D::GenerateUID(const std::string& tag, const std::string& path, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool is_model, bool generate_mip) {
@@ -65,16 +65,15 @@ namespace Bind {
 		return typeid(ImageTexture2D).name() + "#"s + tag + path;
 	}
 
-	std::string ImageTexture2D::GenerateUID(std::shared_ptr<RawTexture2D> texture2D, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip) {
+	std::string ImageTexture2D::GenerateUID(const std::string& tag, std::shared_ptr<RawTexture2D> texture2D, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip) {
 		using namespace std::string_literals;
 
-		return typeid(ImageTexture2D).name() + "#"s + texture2D->ResourceName() + "__"s + OGL_TEXTURE_PARAMETER::GlobalTag(param) + "__"s +
-			std::to_string(unit);
+		return typeid(ImageTexture2D).name() + "#"s + tag + "#"s + texture2D->ResourceName();
 	}
 
 	std::string ImageTexture2D::GetUID() const noexcept {
 		return m_path.length() ? GenerateUID(resource_name(), m_path, m_params, m_unit, false) :
-			GenerateUID(m_resource, m_params, m_unit, false);//最后一个参数不影响名称
+			GenerateUID(m_tag, m_resource, m_params, m_unit, false);//最后三个参数不影响名称
 	}
 
 	std::type_index ImageTexture2D::GetTypeInfo() const noexcept {

@@ -39,8 +39,8 @@ namespace Bind {
 		m_resource->SetParameters(param);
 	}
 
-	CubeMap::CubeMap(std::shared_ptr<RawTexture2D> cubemap, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip)
-		:AbstractTexture(cubemap, param, unit)
+	CubeMap::CubeMap(const std::string& tag, std::shared_ptr<RawTexture2D> cubemap, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip)
+		:AbstractTexture(cubemap, param, unit, tag)
 	{
 		m_resource->SetParameters(param);
 		if (generate_mip) {
@@ -60,8 +60,8 @@ namespace Bind {
 		return BindableResolver::Resolve<CubeMap>(tag, path, param, unit, generate_mip);
 	}
 
-	std::shared_ptr<CubeMap> CubeMap::Resolve(std::shared_ptr<RawTexture2D> cubemap, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip) {
-		return BindableResolver::Resolve<CubeMap>(cubemap, param, unit, generate_mip);
+	std::shared_ptr<CubeMap> CubeMap::Resolve(const std::string& tag, std::shared_ptr<RawTexture2D> cubemap, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip) {
+		return BindableResolver::Resolve<CubeMap>(tag, cubemap, param, unit, generate_mip);
 	}
 
 	std::string CubeMap::GenerateUID(const std::string& tag, std::array<std::string, 6> path, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip) {
@@ -75,15 +75,15 @@ namespace Bind {
 		return gID;
 	}
 
-	std::string CubeMap::GenerateUID(std::shared_ptr<RawTexture2D> cubemap, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip) {
+	std::string CubeMap::GenerateUID(const std::string& tag, std::shared_ptr<RawTexture2D> cubemap, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip) {
 		using namespace std::string_literals;
 
-		return typeid(CubeMap).name() + "#"s + cubemap->ResourceName() + "__"s + OGL_TEXTURE_PARAMETER::GlobalTag(param) + "__"s + std::to_string(unit);
+		return typeid(CubeMap).name() + "#"s + tag + "#"s + cubemap->ResourceName();
 	}
 
 	std::string CubeMap::GetUID() const noexcept {
 		return m_path[0].length() ? GenerateUID(resource_name(), m_path, m_params, m_unit, false) :
-			GenerateUID(m_resource, m_params, m_unit, false);
+			GenerateUID(m_tag, m_resource, m_params, m_unit, false);
 	}
 
 	std::type_index CubeMap::GetTypeInfo() const noexcept {

@@ -300,6 +300,9 @@
     <ClInclude Include="gfxdebug_helper.h">
       <Filter>Macros</Filter>
     </ClInclude>
+    <ClInclude Include="Common\light_common.h">
+      <Filter>Common\头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="storageimage.cpp">
@@ -514,6 +517,9 @@
     </ClCompile>
     <ClCompile Include="Pipeline\postprocess.cpp">
       <Filter>Pipeline\源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\light_common.cpp">
+      <Filter>Common\源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

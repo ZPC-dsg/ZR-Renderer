@@ -98,12 +98,12 @@ namespace Bind {
 		std::shared_ptr<AbstractResource> get_depth_stencil() const noexcept;
 
 		template <texture_type T>
-		std::shared_ptr<T> get_texture_image(const std::string& name, OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip = false) const noxnd;
+		std::shared_ptr<T> get_texture_image(const std::string& image_name, const std::string& name, OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip = false) const noxnd;
 		template <texture_type T>
-		std::shared_ptr<T> get_texture_image(size_t index, OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip = false) const noxnd;
+		std::shared_ptr<T> get_texture_image(const std::string& image_name, size_t index, OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip = false) const noxnd;
 
 		template <texture_type T>
-		std::shared_ptr<T> get_texture_depthstencil(OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip = false) const noxnd;
+		std::shared_ptr<T> get_texture_depthstencil(const std::string& image_name, OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip = false) const noxnd;
 
 		inline unsigned int get_width() const noexcept { return m_width; }
 		inline unsigned int get_height() const noexcept { return m_height; }
@@ -125,29 +125,29 @@ namespace Bind {
 	};
 
 	template <texture_type T>
-	std::shared_ptr<T> RenderTarget::get_texture_image(const std::string& name, OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip) const noxnd {
+	std::shared_ptr<T> RenderTarget::get_texture_image(const std::string& image_name, const std::string& name, OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip) const noxnd {
 		int index;
 		auto p = get_render_target(name, index);
 		if (!p)
 			return nullptr;
 
-		return T::Resolve(std::dynamic_pointer_cast<RawTexture2D>(p), param, unit, generate_mip);
+		return T::Resolve(image_name, std::dynamic_pointer_cast<RawTexture2D>(p), param, unit, generate_mip);
 	}
 
 	template <texture_type T>
-	std::shared_ptr<T> RenderTarget::get_texture_image(size_t index, OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip) const noxnd {
+	std::shared_ptr<T> RenderTarget::get_texture_image(const std::string& image_name, size_t index, OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip) const noxnd {
 		assert(index < this->m_rendertargets.size());
 
-		return T::Resolve(std::dynamic_pointer_cast<RawTexture2D>(this->m_rendertargets[index]), param, unit, generate_mip);
+		return T::Resolve(image_name, std::dynamic_pointer_cast<RawTexture2D>(this->m_rendertargets[index]), param, unit, generate_mip);
 	}
 
 	template <texture_type T>
-	std::shared_ptr<T> RenderTarget::get_texture_depthstencil(OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip) const noxnd {
+	std::shared_ptr<T> RenderTarget::get_texture_depthstencil(const std::string& image_name, OGL_TEXTURE_PARAMETER param, GLuint unit, bool generate_mip) const noxnd {
 		auto d = std::dynamic_pointer_cast<RawTexture2D>(m_depthstencil);
 		if (!d)
 			return nullptr;
 
-		return T::Resolve(d, param, unit, generate_mip);
+		return T::Resolve(image_name, d, param, unit, generate_mip);
 	}
 
 #undef RENDERTARGET_FILE

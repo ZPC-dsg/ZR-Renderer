@@ -181,6 +181,7 @@
     <ClInclude Include="buffer.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="Common\computeProxy.h" />
+    <ClInclude Include="Common\light_common.h" />
     <ClInclude Include="Common\random_generator.h" />
     <ClInclude Include="Common\render_helper.h" />
     <ClInclude Include="computeshader.h" />
@@ -253,6 +254,7 @@
     <ClCompile Include="buffer.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="Common\computeProxy.cpp" />
+    <ClCompile Include="Common\light_common.cpp" />
     <ClCompile Include="Common\random_generator.cpp" />
     <ClCompile Include="Common\render_helper.cpp" />
     <ClCompile Include="computeshader.cpp" />

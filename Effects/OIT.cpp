@@ -79,7 +79,7 @@ namespace RTREffects
 		m_proxy->Cook();
 		m_proxy->ScaleModel(glm::vec3(0.2f));
 
-		m_test_opaque = opaque_render_target->get_texture_image<Bind::ImageTexture2D>(0, {}, 0);
+		m_test_opaque = opaque_render_target->get_texture_image<Bind::ImageTexture2D>("opaque_test", 0, {}, 0);
 	}
 
 	void OIT::prepare_transparent()
@@ -157,7 +157,7 @@ namespace RTREffects
 		m_blend_shader = Bind::ShaderProgram::Resolve("blend_shader", std::vector<GLuint>{vertex, fragment});
 
 		auto opaque_framebuffer = Bind::RenderTarget::Resolve("opaque_rendertarget", globalSettings::screen_width, globalSettings::screen_height);
-		m_opaque_texture = opaque_framebuffer->get_texture_image<Bind::ImageTexture2D>(0, {}, 2);
+		m_opaque_texture = opaque_framebuffer->get_texture_image<Bind::ImageTexture2D>("opaque", 0, {}, 2);
 	}
 
 	void OIT::prepare_rectangle()

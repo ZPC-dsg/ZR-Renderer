@@ -174,7 +174,7 @@ namespace RTREffects {
 		equiShader->UnBind();
 		hdr->UnBind();
 		
-		auto environment_map = render_target->get_texture_image<Bind::CubeMap>(0, param, 10, true);
+		auto environment_map = render_target->get_texture_image<Bind::CubeMap>("environment", 0, param, 10, true);
 		return { environment_map->GetUID(),render_target->GetUID(),viewport->GetUID() };
 	}
 
@@ -220,7 +220,7 @@ namespace RTREffects {
 		cubemap->UnBind();
 		irradianceShader->UnBind();
 
-		auto irradiance_texture = render_target->get_texture_image<Bind::CubeMap>(0, param, 5);
+		auto irradiance_texture = render_target->get_texture_image<Bind::CubeMap>("irradiance", 0, param, 5);
 		m_proxy->AddRootBindable(irradiance_texture);
 		return irradiance_texture->GetUID();
 	}
@@ -271,7 +271,7 @@ namespace RTREffects {
 		prefilterShader->UnBind();
 		render_target->UnBind();
 
-		auto prefilter_map = render_target->get_texture_image<Bind::CubeMap>(0, param, 6);
+		auto prefilter_map = render_target->get_texture_image<Bind::CubeMap>("prefilter", 0, param, 6);
 		m_proxy->AddRootBindable(prefilter_map);
 		return prefilter_map->GetUID();
 	}
@@ -302,7 +302,7 @@ namespace RTREffects {
 		brdfShader->UnBind();
 		render_target->UnBind();
 
-		auto brdf_texture = render_target->get_texture_image<Bind::ImageTexture2D>(0, param, 7);
+		auto brdf_texture = render_target->get_texture_image<Bind::ImageTexture2D>("brdf", 0, param, 7);
 		m_proxy->AddRootBindable(brdf_texture);
 		return brdf_texture->GetUID();
 	}

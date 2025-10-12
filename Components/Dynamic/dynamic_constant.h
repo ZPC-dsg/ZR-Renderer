@@ -413,6 +413,8 @@ namespace Dynamic {
 
 			ConstantElementRef operator[](const std::string& key) noxnd;
 			ConstConstantElementRef operator[](const std::string& key) const noxnd;
+			ConstantElementRef operator[](size_t index) noxnd;
+			ConstConstantElementRef operator[](size_t index) const noxnd;
 			
 			inline const char* GetData() const noexcept { return m_data.data(); };
 			inline size_t GetSizeInBytes() const noexcept { return m_data.size(); };
