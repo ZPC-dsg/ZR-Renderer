@@ -13,7 +13,9 @@ namespace Bind {
 #define TEXTURE_HELPER \
 	X(GL_TEXTURE_2D) \
 	X(GL_TEXTURE_2D_ARRAY) \
-	X(GL_TEXTURE_CUBE_MAP)
+	X(GL_TEXTURE_CUBE_MAP) \
+	X(GL_TEXTURE_2D_MULTISAMPLE) \
+	X(GL_TEXTURE_2D_MULTISAMPLE_ARRAY)
 #endif
 
 	template <typename T>
@@ -37,6 +39,16 @@ namespace Bind {
 #define X(Target) \
 	template <> \
 	RenderTarget& AppendTexture<Target>(const std::string& name, const OGL_TEXTURE_PARAMETER& param, unsigned int miplevels, unsigned int slices, GLenum internal_format) noxnd; 
+
+		TEXTURE_HELPER
+
+#undef X
+
+		template <GLenum Target>
+		RenderTarget& ChangeToNewTexture(const std::string& tag, size_t pos = 0, const OGL_TEXTURE_PARAMETER& param = {}, unsigned int miplevels = 1, unsigned int slices = 1, GLenum internal_format = GL_RGB8) noxnd;
+#define X(Target) \
+	template <> \
+	RenderTarget& ChangeToNewTexture<Target>(const std::string& tag, size_t pos, const OGL_TEXTURE_PARAMETER& param, unsigned int miplevels, unsigned int slices, GLenum internal_format) noxnd;
 
 		TEXTURE_HELPER
 
@@ -111,6 +123,8 @@ namespace Bind {
 		std::type_index GetTypeInfo() const noexcept override;
 
 		void ClearTextures(unsigned int new_width, unsigned int new_height, GLenum internal_format = GL_RGB8, unsigned int new_samples = 1);
+
+		void ChangeTexture(std::shared_ptr<AbstractTexture> new_texture, size_t pos = 0);
 
 	private:
 		void gen_framebuffer(unsigned int* mips, unsigned int* slices, bool is_renderbuffer, bool is_depthonly) noxnd;

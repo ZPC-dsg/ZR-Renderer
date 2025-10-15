@@ -277,6 +277,18 @@ namespace Bind {
 		return typeid(RenderTarget);
 	}
 
+	void RenderTarget::ChangeTexture(std::shared_ptr<AbstractTexture> new_texture, size_t pos)
+	{
+		if (m_rendertargets[pos] == new_texture->GetResource())
+		{
+			return;
+		}
+
+		m_rendertargets[pos] = new_texture->GetResource();
+		auto resource = std::static_pointer_cast<RawTexture2D>(m_rendertargets[pos]);
+		resource->BindSliceAsRenderTarget(m_framebuffer, pos, 0, 0);
+	}
+
 #define X(Target) \
 	template <> \
 	RenderTarget& RenderTarget::AppendTexture<Target>(const std::string& tag, const OGL_TEXTURE_PARAMETER& param, unsigned int miplevels, unsigned int slices, GLenum internal_format) noxnd { \
@@ -298,6 +310,30 @@ namespace Bind {
 	}
 
 	TEXTURE_HELPER
+
+#undef X
+
+#define X(Target) \
+	template <> \
+	RenderTarget& RenderTarget::ChangeToNewTexture<Target>(const std::string& tag, size_t pos, const OGL_TEXTURE_PARAMETER& param, unsigned int miplevels, unsigned int slices, GLenum internal_format) noxnd { \
+		OGL_TEXTURE2D_DESC desc; \
+		desc.width = m_width; \
+		desc.height = m_height; \
+		desc.samplecount = m_samples; \
+		desc.internal_format = internal_format; \
+		desc.arrayslices = slices; \
+		desc.target = Target; \
+		\
+		auto resource = std::static_pointer_cast<RawTexture2D>(ResourceFactory::CreateTexture2D(tag, desc, miplevels)); \
+		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer); \
+		resource->BindSliceAsRenderTarget(m_framebuffer, pos, 0, 0);\
+		resource->SetParameters(param); \
+		m_rendertargets[pos] = resource;\
+		\
+		return *this;\
+	}
+
+		TEXTURE_HELPER
 
 #undef X
 

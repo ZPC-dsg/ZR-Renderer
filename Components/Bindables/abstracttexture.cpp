@@ -54,4 +54,9 @@ namespace Bind {
 	{
 		return (GLint)m_unit;
 	}
+
+	std::shared_ptr<AbstractResource> AbstractTexture::GetResource()
+	{
+		return m_resource;
+	}
 }

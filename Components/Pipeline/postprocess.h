@@ -26,6 +26,7 @@ namespace OGLPipeline
 		uint16_t anti_aliasing_method = ANTI_ALIASING_METHOD_NUM;
 		float FXAA_threshold_min = 0.0833;
 		float FXAA_threshold = 0.166;
+		float FXAA_subpixel_quality = 0.75;
 	};
 
 	class DeferRenderer;
@@ -44,20 +45,33 @@ namespace OGLPipeline
 			return processor;
 		}
 
-		void MainProcessor(DeferRenderer* main_renderer);
+		void MainProcessor();
+		void PreparePostProcess();
 		void SetOption(PostProcessOptions category, uint16_t option);
+
+		void Accept(DeferRenderer* renderer);
 		
 	private:
 		void PrepareUI();
 
 		void PrepareAA();
-		void AntiAliasing(std::shared_ptr<Bind::ImageTexture2D> scene_color);
+		void AntiAliasing();
+
+		void PrepareBloom();
+		void Bloom();
+
+		void PrepareToneGamma();
+		void ToneMappingAndGammaCorrection();
 
 	private:
 		PostProcessGuiBlock m_gui_block;
+		DeferRenderer* m_renderer = nullptr;
 
 	private:
-		std::shared_ptr<Bind::RenderTarget> m_AA_framebuffer;
+		std::shared_ptr<Bind::RenderTarget> m_postprocess_framebuffer;
+
+		std::shared_ptr<Bind::ImageTexture2D> m_AA_texture;
+		std::shared_ptr<Bind::ImageTexture2D> m_tone_gamma_texture;
 	};
 
 	extern PostProcessor g_post_processor;

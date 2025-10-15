@@ -24,6 +24,8 @@ namespace Bind {
 		GLint GetBindingPoint() const noexcept override;
 		bool NeedBindingPoint() noexcept override;
 
+		std::shared_ptr<AbstractResource> GetResource();
+
 	protected:
 		static unsigned char* gen_image_from_file(const std::string& path, int& width, int& height, int& channels, bool is_model = false);
 

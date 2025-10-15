@@ -44,6 +44,14 @@ namespace Bind {
 		}
 	}
 
+	ImageTexture2D::ImageTexture2D(const std::string& tag, const OGL_TEXTURE2D_DESC& desc, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip)
+		:AbstractTexture(nullptr, param, unit, tag)
+	{
+		std::string resource_name = tag + "_resource";
+		m_resource = std::dynamic_pointer_cast<RawTexture2D>(ResourceFactory::CreateTexture2D(resource_name, desc));
+		m_resource->SetParameters(param);
+	}
+
 	void ImageTexture2D::Bind() noxnd {
 		m_resource->Bind(m_unit);
 	}
@@ -60,15 +68,27 @@ namespace Bind {
 		return BindableResolver::Resolve<ImageTexture2D>(tag, texture2D, param, unit, generate_mip);
 	}
 
+	std::shared_ptr<ImageTexture2D> ImageTexture2D::Resolve(const std::string& tag, const OGL_TEXTURE2D_DESC& desc, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip)
+	{
+		return BindableResolver::Resolve<ImageTexture2D>(tag, desc, param, unit, generate_mip);
+	}
+
 	std::string ImageTexture2D::GenerateUID(const std::string& tag, const std::string& path, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool is_model, bool generate_mip) {
 		using namespace std::string_literals;
-		return typeid(ImageTexture2D).name() + "#"s + tag + path;
+		return typeid(ImageTexture2D).name() + "#"s + tag + "#_PATH: "s + path;
 	}
 
 	std::string ImageTexture2D::GenerateUID(const std::string& tag, std::shared_ptr<RawTexture2D> texture2D, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip) {
 		using namespace std::string_literals;
 
 		return typeid(ImageTexture2D).name() + "#"s + tag + "#"s + texture2D->ResourceName();
+	}
+
+	std::string ImageTexture2D::GenerateUID(const std::string& tag, const OGL_TEXTURE2D_DESC& desc, const OGL_TEXTURE_PARAMETER& param, GLuint unit, bool generate_mip)
+	{
+		using namespace std::string_literals;
+
+		return typeid(ImageTexture2D).name() + "#"s + tag + "#"s + tag + "_resource";
 	}
 
 	std::string ImageTexture2D::GetUID() const noexcept {

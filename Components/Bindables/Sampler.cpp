@@ -65,4 +65,19 @@ namespace Bind
 			}
 		}
 	}
+
+	GLint Sampler::GetBindingPoint() const noexcept
+	{
+		return m_unit;
+	}
+
+	void Sampler::ChangeBindingPoint(GLuint binding) noexcept
+	{
+		m_unit = binding;
+	}
+
+	bool Sampler::NeedBindingPoint() noexcept
+	{
+		return true;
+	}
 }

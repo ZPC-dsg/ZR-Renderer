@@ -22,6 +22,10 @@ namespace Bind
 		std::string GetUID() const noexcept override;
 		std::type_index GetTypeInfo() const noexcept override;
 
+		void ChangeBindingPoint(GLuint binding) noexcept override;
+		GLint GetBindingPoint() const noexcept override;
+		bool NeedBindingPoint() noexcept override;
+
 	private:
 		void SetParameters(const OGL_TEXTURE_PARAMETER& param);
 

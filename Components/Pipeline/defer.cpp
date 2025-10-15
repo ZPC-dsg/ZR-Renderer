@@ -4,6 +4,7 @@
 #include <Bindables/rendertarget.h>
 #include <Bindables/shaderprogram.h>
 #include <Bindables/constantbuffer.h>
+#include <Bindables/Sampler.h>
 #include <Common/render_helper.h>
 #include <assimploader.h>
 
@@ -20,13 +21,15 @@ namespace OGLPipeline
 	{
 		RenderDefer();
 		DeferLighting();
+		g_post_processor.MainProcessor();
 		DisplayDefer();
-		g_post_processor.MainProcessor(this);
 	}
 
 	// TODO ：屏幕尺寸变化处理逻辑后续补充
 	void DeferRenderer::prepare()
 	{
+		g_post_processor.Accept(this);
+
 		m_scene = AssimpLoader::LoadModel("Sponza", "sponza.obj", m_main_scene);
 
 		m_defer_framebuffer = Bind::RenderTarget::Resolve("defer_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
@@ -65,9 +68,10 @@ namespace OGLPipeline
 
 		m_scene->Cook();
 
+		PrepareSamplers();
 		PrepareDeferLighting();
 		PrepareLightBuffer();
-		g_post_processor.PrepareAA();
+		g_post_processor.PreparePostProcess();
 	}
 
 	void DeferRenderer::prepare_ui(const std::string& name)
@@ -115,6 +119,22 @@ namespace OGLPipeline
 		PrepareLightUI();
 
 		ImGui::End();
+	}
+
+	void DeferRenderer::PrepareSamplers()
+	{
+		OGL_TEXTURE_PARAMETER param;
+		param.wrap_x = GL_CLAMP_TO_EDGE;
+		param.wrap_y = GL_CLAMP_TO_EDGE;
+		param.wrap_z = GL_CLAMP_TO_EDGE;
+		m_bilinear_sampler = Bind::Sampler::Resolve("bilinear_sampler", 0, param);
+
+		param.min_filter = GL_LINEAR_MIPMAP_LINEAR;
+		m_trilinear_sampler = Bind::Sampler::Resolve("trilinear_sampler", 1, param);
+		
+		param.min_filter = GL_NEAREST;
+		param.mag_filter = GL_NEAREST;
+		m_point_sampler = Bind::Sampler::Resolve("point_sampler", 2, param);
 	}
 
 	void DeferRenderer::PrepareDeferLighting()
@@ -507,7 +527,7 @@ namespace OGLPipeline
 		}
 		default:
 		{
-			break;
+			Common::RenderHelper::RenderTextureToScreen(g_post_processor.m_tone_gamma_texture);
 		}
 		}
 

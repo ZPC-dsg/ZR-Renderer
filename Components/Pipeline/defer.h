@@ -19,12 +19,14 @@
 #include <Common/light_common.h>
 
 #include <set>
+#include <string>
 
 namespace Bind
 {
 	class RenderTarget;
 	class ImageTexture2D;
 	class ConstantBuffer;
+	class Sampler;
 }
 
 namespace SceneGraph
@@ -49,6 +51,8 @@ namespace OGLPipeline
 		void prepare_ui(const std::string& name) override;
 
 	private:
+		void PrepareSamplers();
+
 		void PrepareDeferLighting();
 		void PrepareLightBuffer();
 
@@ -71,7 +75,7 @@ namespace OGLPipeline
 		std::vector<std::pair<Common::LightCommon, size_t>> m_spot_lights;
 		std::vector<std::pair<Common::LightCommon, size_t>> m_rect_lights;
 		std::set<size_t> m_available_indexes;
-		
+
 		std::shared_ptr<Bind::ConstantBuffer> m_light_buffer;
 
 	private:
@@ -83,6 +87,10 @@ namespace OGLPipeline
 
 		std::shared_ptr<Bind::RenderTarget> m_defer_lighting_framebuffer;
 		std::shared_ptr<Bind::ImageTexture2D> m_lighting_texture;
+
+		std::shared_ptr<Bind::Sampler> m_point_sampler;
+		std::shared_ptr<Bind::Sampler> m_bilinear_sampler;
+		std::shared_ptr<Bind::Sampler> m_trilinear_sampler;
 
 		std::shared_ptr<SceneGraph::ModelProxy> m_scene;
 	};
