@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <array>
 
 #define ANTI_ALIASING_METHOD_MSAA 0
 #define ANTI_ALIASING_METHOD_FXAA 1
@@ -27,6 +28,9 @@ namespace OGLPipeline
 		float FXAA_threshold_min = 0.0833;
 		float FXAA_threshold = 0.166;
 		float FXAA_subpixel_quality = 0.75;
+
+		uint16_t bloom_downsample_display_level = 0; // 默认不显示bloom downsample结果
+		uint16_t bloom_filter_display_level = 0; // 默认不显示bloom filter结果
 	};
 
 	class DeferRenderer;
@@ -58,7 +62,11 @@ namespace OGLPipeline
 		void AntiAliasing();
 
 		void PrepareBloom();
+		void PrepareBloomDownSample();
+		void PrepareBloomFilter();
 		void Bloom();
+		void BloomDownSample();
+		void BloomFilter();
 
 		void PrepareToneGamma();
 		void ToneMappingAndGammaCorrection();
@@ -72,6 +80,10 @@ namespace OGLPipeline
 
 		std::shared_ptr<Bind::ImageTexture2D> m_AA_texture;
 		std::shared_ptr<Bind::ImageTexture2D> m_tone_gamma_texture;
+
+		std::array<std::shared_ptr<Bind::ImageTexture2D>, 6> m_bloom_downsample_chain;
+
+		std::shared_ptr<Bind::ImageTexture2D> m_output_texture;
 	};
 
 	extern PostProcessor g_post_processor;

@@ -1,4 +1,5 @@
 #include <Bindables/rendertarget.h>
+#include <logging.h>
 
 #include <numeric>
 
@@ -168,7 +169,6 @@ namespace Bind {
 				break;
 			}
 		}
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	void RenderTarget::Bind() noxnd {
@@ -279,14 +279,25 @@ namespace Bind {
 
 	void RenderTarget::ChangeTexture(std::shared_ptr<AbstractTexture> new_texture, size_t pos)
 	{
+		assert(pos < m_rendertargets.size());
+		auto desc = new_texture->get_description();
+		if (m_rendertargets.size() > 1 && (m_width != desc.width || m_height != desc.height))
+		{
+			LOGW("New texture size does not match sizes before!");
+			std::exit(EXIT_FAILURE);
+		}
+
 		if (m_rendertargets[pos] == new_texture->GetResource())
 		{
 			return;
 		}
 
+		m_width = desc.width;
+		m_height = desc.height;
 		m_rendertargets[pos] = new_texture->GetResource();
 		auto resource = std::static_pointer_cast<RawTexture2D>(m_rendertargets[pos]);
 		resource->BindSliceAsRenderTarget(m_framebuffer, pos, 0, 0);
+		CheckCompleteness();
 	}
 
 #define X(Target) \

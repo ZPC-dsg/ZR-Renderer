@@ -26,12 +26,21 @@ namespace OGLPipeline
 	void PostProcessor::MainProcessor()
 	{
 		APP_RANGE_BEGIN("post_process");
-		glDisable(GL_CULL_FACE);
 
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+
+		m_postprocess_framebuffer->Bind();
 		AntiAliasing();
 		Bloom();
-		ToneMappingAndGammaCorrection();
 
+		if (!m_gui_block.bloom_filter_display_level && !m_gui_block.bloom_downsample_display_level)
+		{
+			ToneMappingAndGammaCorrection();
+		}
+
+		m_postprocess_framebuffer->UnBind();
 		APP_RANGE_END();
 	}
 
@@ -50,28 +59,70 @@ namespace OGLPipeline
 		{
 			ImGui::PushID(2);
 			ImGui::Indent();
-			int aamethod = static_cast<int>(g_post_processor.m_gui_block.anti_aliasing_method);
+			int aamethod = static_cast<int>(m_gui_block.anti_aliasing_method);
 			ImGui::RadioButton("MSAA", &aamethod, ANTI_ALIASING_METHOD_MSAA);
 			ImGui::RadioButton("FXAA", &aamethod, ANTI_ALIASING_METHOD_FXAA);
 			ImGui::RadioButton("TAA", &aamethod, ANTI_ALIASING_METHOD_TAA);
 			ImGui::RadioButton("None", &aamethod, ANTI_ALIASING_METHOD_NUM);
-			g_post_processor.m_gui_block.anti_aliasing_method = static_cast<uint16_t>(aamethod);
+			m_gui_block.anti_aliasing_method = static_cast<uint16_t>(aamethod);
 			ImGui::Unindent();
 			ImGui::PopID();
 		}
 
-		if (g_post_processor.m_gui_block.anti_aliasing_method != ANTI_ALIASING_METHOD_FXAA)
+		// FXAA
+		if (m_gui_block.anti_aliasing_method != ANTI_ALIASING_METHOD_FXAA)
 		{
 			ImGui::BeginDisabled();
 		}
-		ImGui::DragFloat("FXAA Threshold Min", &g_post_processor.m_gui_block.FXAA_threshold_min, 0.001f, 0.03f, 0.1f);
+		ImGui::DragFloat("FXAA Threshold Min", &m_gui_block.FXAA_threshold_min, 0.001f, 0.03f, 0.1f);
 		ImGui::NewLine();
-		ImGui::DragFloat("FXAA Threshold", &g_post_processor.m_gui_block.FXAA_threshold, 0.001f, 0.05f, 0.4f);
+		ImGui::DragFloat("FXAA Threshold", &m_gui_block.FXAA_threshold, 0.001f, 0.05f, 0.4f);
 		ImGui::NewLine();
-		ImGui::DragFloat("FXAA Subpixel Quality", &g_post_processor.m_gui_block.FXAA_subpixel_quality, 0.01f, 0.0f, 1.0f);
-		if (g_post_processor.m_gui_block.anti_aliasing_method != ANTI_ALIASING_METHOD_FXAA)
+		ImGui::DragFloat("FXAA Subpixel Quality", &m_gui_block.FXAA_subpixel_quality, 0.01f, 0.0f, 1.0f);
+		if (m_gui_block.anti_aliasing_method != ANTI_ALIASING_METHOD_FXAA)
 		{
 			ImGui::EndDisabled();
+		}
+
+		// Bloom
+		if (ImGui::CollapsingHeader("Bloom", false))
+		{
+			ImGui::PushID(3);
+			ImGui::Indent();
+			ImGui::Text("Downsample Level:");
+			ImGui::NewLine();
+			int downsample_level = static_cast<int>(m_gui_block.bloom_downsample_display_level);
+			ImGui::RadioButton("None", &downsample_level, 0);
+			for (int i = 1; i <= 6; i++)
+			{
+				std::string tag = "Level " + std::to_string(i);
+				ImGui::RadioButton(tag.c_str(), &downsample_level, i);
+			}
+			m_gui_block.bloom_downsample_display_level = downsample_level;
+			ImGui::Unindent();
+			ImGui::PopID();
+
+			ImGui::NewLine();
+
+			ImGui::PushID(4);
+			ImGui::Indent();
+			ImGui::Text("Filter Level:");
+			ImGui::NewLine();
+			int filter_level = static_cast<int>(m_gui_block.bloom_filter_display_level);
+			ImGui::RadioButton("None", &filter_level, 0);
+			for (int i = 1; i <= 6; i++)
+			{
+				std::string tag = "Level " + std::to_string(i);
+				ImGui::RadioButton(tag.c_str(), &filter_level, i);
+			}
+			m_gui_block.bloom_filter_display_level = filter_level;
+			ImGui::Unindent();
+			ImGui::PopID();
+
+			if (downsample_level || filter_level)
+			{
+				m_renderer->m_defer_display_mode = DEFER_DISPLAY_MODE_NUM;
+			}
 		}
 	}
 
@@ -89,13 +140,10 @@ namespace OGLPipeline
 
 	void PostProcessor::AntiAliasing()
 	{
-		APP_RANGE_BEGIN("Anti Aliasing");
-		m_postprocess_framebuffer->Bind();
+		APP_RANGE_BEGIN("Anti Aliasing Pass");
 		m_postprocess_framebuffer->ChangeTexture(m_AA_texture);
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glDisable(GL_DEPTH_TEST);
-		glDepthMask(GL_FALSE);
 
 		switch (m_gui_block.anti_aliasing_method)
 		{
@@ -138,10 +186,106 @@ namespace OGLPipeline
 
 	void PostProcessor::PrepareBloom()
 	{
+		PrepareBloomDownSample();
+		PrepareBloomFilter();
+	}
 
+	
+	void PostProcessor::PrepareBloomDownSample()
+	{
+		std::array<std::pair<unsigned int, unsigned int>, 6> tex_sizes;
+		tex_sizes[0].first = (globalSettings::screen_width + 1) / 2;
+		tex_sizes[0].second = (globalSettings::screen_height + 1) / 2;
+		for (int i = 1; i < tex_sizes.size(); i++)
+		{
+			tex_sizes[i].first = (tex_sizes[i - 1].first + 1) / 2;
+			tex_sizes[i].second= (tex_sizes[i - 1].second + 1) / 2;
+		}
+
+		OGL_TEXTURE2D_DESC desc;
+		desc.target = GL_TEXTURE_2D;
+		desc.internal_format = GL_RGBA16F;
+		desc.cpu_format = GL_RGBA;
+		desc.data_type = GL_UNSIGNED_INT;
+		OGL_TEXTURE_PARAMETER param;
+		param.wrap_x = GL_CLAMP_TO_EDGE;
+		param.wrap_y = GL_CLAMP_TO_EDGE;
+		for (int i = 0; i < 6; i++)
+		{
+			desc.width = tex_sizes[i].first;
+			desc.height = tex_sizes[i].second;
+			std::string tag = "bloom_downsample_" + std::to_string(i);
+			m_bloom_downsample_chain[i] = Bind::ImageTexture2D::Resolve(tag, desc, param, 0);
+		}
+
+		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "bloom_downsample_vertex", "Common", "defer_shading.vert");
+		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "bloom_downsample_fragment", "Bloom", "downsamplebloom.frag");
+		auto bloom_downsample_shader = Bind::ShaderProgram::Resolve("bloom_downsample_shader", { vertex,fragment });
+	}
+
+	void PostProcessor::PrepareBloomFilter()
+	{
+		
 	}
 
 	void PostProcessor::Bloom()
+	{
+		APP_RANGE_BEGIN("Bloom Pass");
+
+		APP_RANGE_BEGIN("Bloom Downsample Pass")
+		BloomDownSample();
+		APP_RANGE_END();
+		if (m_gui_block.bloom_downsample_display_level > 0)
+		{
+			m_output_texture = m_bloom_downsample_chain[m_gui_block.bloom_downsample_display_level - 1];
+			glViewport(0, 0, globalSettings::screen_width, globalSettings::screen_height);
+			APP_RANGE_END();
+			return;
+		}
+
+		APP_RANGE_BEGIN("Bloom Filter Pass");
+		BloomFilter();
+		APP_RANGE_END();
+
+		// TODO : 在写好BloomFilter后可以删除
+		glViewport(0, 0, globalSettings::screen_width, globalSettings::screen_height);
+		APP_RANGE_END();
+	}
+
+	void PostProcessor::BloomDownSample()
+	{
+		auto bloom_downsample_shader = Bind::ShaderProgram::Resolve("bloom_downsample_shader", { 0,0 });
+		bloom_downsample_shader->Bind();
+
+		m_postprocess_framebuffer->ChangeTexture(m_bloom_downsample_chain[0]);
+		glClearColor(0, 0, 0, 1);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		auto desc = m_bloom_downsample_chain[0]->get_description();
+		glViewport(0, 0, desc.width, desc.height);
+		m_AA_texture->Bind();
+
+		Common::RenderHelper::RenderSimpleQuad();
+
+		m_AA_texture->UnBind();
+
+		for (int i = 1; i < 6; i++)
+		{
+			m_postprocess_framebuffer->ChangeTexture(m_bloom_downsample_chain[i]);
+			glClearColor(0, 0, 0, 1);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			desc = m_bloom_downsample_chain[i]->get_description();
+			glViewport(0, 0, desc.width, desc.height);
+			m_bloom_downsample_chain[i - 1]->Bind();
+
+			Common::RenderHelper::RenderSimpleQuad();
+
+			m_bloom_downsample_chain[i - 1]->UnBind();
+		}
+	
+		bloom_downsample_shader->UnBind();
+	}
+
+	void PostProcessor::BloomFilter()
 	{
 
 	}
@@ -158,7 +302,7 @@ namespace OGLPipeline
 
 	void PostProcessor::ToneMappingAndGammaCorrection()
 	{
-		APP_RANGE_BEGIN("Tone Mapping & Gamma Correction");
+		APP_RANGE_BEGIN("Tone Mapping & Gamma Correction Pass");
 
 		m_postprocess_framebuffer->ChangeTexture(m_tone_gamma_texture);
 		glClearColor(0, 0, 0, 1);
@@ -172,6 +316,8 @@ namespace OGLPipeline
 
 		m_AA_texture->UnBind();
 		tone_gamma_shader->UnBind();
+
+		m_output_texture = m_tone_gamma_texture;
 
 		APP_RANGE_END();
 		return;

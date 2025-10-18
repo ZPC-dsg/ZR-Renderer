@@ -101,20 +101,7 @@ namespace OGLPipeline
 			ImGui::PopID();
 		}
 
-		// Anti Aliasing
-		if (ImGui::CollapsingHeader("Anti Aliasing", false))
-		{
-			ImGui::PushID(2);
-			ImGui::Indent();
-			int aamethod = static_cast<int>(g_post_processor.m_gui_block.anti_aliasing_method);
-			ImGui::RadioButton("MSAA", &aamethod, ANTI_ALIASING_METHOD_MSAA);
-			ImGui::RadioButton("FXAA", &aamethod, ANTI_ALIASING_METHOD_FXAA);
-			ImGui::RadioButton("TAA", &aamethod, ANTI_ALIASING_METHOD_TAA);
-			ImGui::RadioButton("None", &aamethod, ANTI_ALIASING_METHOD_NUM);
-			g_post_processor.m_gui_block.anti_aliasing_method = static_cast<uint16_t>(aamethod);
-			ImGui::Unindent();
-			ImGui::PopID();
-		}
+		g_post_processor.PrepareUI();
 
 		PrepareLightUI();
 
@@ -527,7 +514,7 @@ namespace OGLPipeline
 		}
 		default:
 		{
-			Common::RenderHelper::RenderTextureToScreen(g_post_processor.m_tone_gamma_texture);
+			Common::RenderHelper::RenderTextureToScreen(g_post_processor.m_output_texture);
 		}
 		}
 
