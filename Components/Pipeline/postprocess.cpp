@@ -32,12 +32,14 @@ namespace OGLPipeline
 		glDepthMask(GL_FALSE);
 
 		m_postprocess_framebuffer->Bind();
-		AntiAliasing();
+		TAA();
 		Bloom();
 
 		if (!m_gui_block.bloom_filter_display_level && !m_gui_block.bloom_downsample_display_level)
 		{
-			ToneMappingAndGammaCorrection();
+			ToneMapping();
+			FXAA();
+			GammaCorrection();
 		}
 
 		m_postprocess_framebuffer->UnBind();
@@ -130,7 +132,10 @@ namespace OGLPipeline
 	{
 		m_postprocess_framebuffer = Bind::RenderTarget::Resolve("postprocess_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
 		m_postprocess_framebuffer->AppendTexture<GL_TEXTURE_2D>("AA_texture", {}, 1, 1, GL_RGBA16F).CheckCompleteness();
-		m_AA_texture = m_postprocess_framebuffer->get_texture_image<Bind::ImageTexture2D>("AA_result_texture", 0, {}, 0);
+		OGL_TEXTURE_PARAMETER param;
+		param.wrap_x = GL_CLAMP_TO_EDGE;
+		param.wrap_y = GL_CLAMP_TO_EDGE;
+		m_AA_texture = m_postprocess_framebuffer->get_texture_image<Bind::ImageTexture2D>("AA_result_texture", 0, param, 0);
 
 		// FXAA
 		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "FXAA_vertex", "Common", "defer_shading.vert");
@@ -138,19 +143,31 @@ namespace OGLPipeline
 		auto FXAA_shader = Bind::ShaderProgram::Resolve("FXAA_shader", std::vector<GLuint>{vertex, fragment});
 	}
 
-	void PostProcessor::AntiAliasing()
+	void PostProcessor::TAA()
 	{
-		APP_RANGE_BEGIN("Anti Aliasing Pass");
-		m_postprocess_framebuffer->ChangeTexture(m_AA_texture);
-		glClearColor(0, 0, 0, 1);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		if (m_gui_block.anti_aliasing_method == ANTI_ALIASING_METHOD_TAA)
+		{
+			APP_RANGE_BEGIN("TAA Pass");
+			m_postprocess_framebuffer->ChangeTexture(m_AA_texture);
+			glClearColor(0, 0, 0, 1);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		switch (m_gui_block.anti_aliasing_method)
+			// TODO : 还没有实现TAA逻辑，暂时将其设置为原来的defer lighting 纹理
+			m_AA_texture->CopyImage(m_renderer->m_lighting_texture);
+
+			APP_RANGE_END();
+		}
+	}
+
+	void PostProcessor::FXAA()
+	{
+		if (m_gui_block.anti_aliasing_method == ANTI_ALIASING_METHOD_FXAA)
 		{
-		case 0:
-			break;
-		case 1:
-		{
+			APP_RANGE_BEGIN("FXAA Pass");
+			m_postprocess_framebuffer->ChangeTexture(m_AA_texture);
+			glClearColor(0, 0, 0, 1);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 			auto shader = Bind::ShaderProgram::Resolve("FXAA_shader", { 0,0 });
 			shader->BindWithoutUpdate();
 			shader->EditUniform("luma_threshold") = m_gui_block.FXAA_threshold;
@@ -158,30 +175,22 @@ namespace OGLPipeline
 			shader->EditUniform("subpixel_quality") = m_gui_block.FXAA_subpixel_quality;
 			shader->UpdateOnly();
 
-			GLuint binding = m_renderer->m_lighting_texture->GetBindingPoint();
-			m_renderer->m_lighting_texture->ChangeBindingPoint(0);
-			m_renderer->m_lighting_texture->Bind();
+			m_tonemapping_texture->Bind();
 			m_renderer->m_bilinear_sampler->Bind();
-			m_renderer->m_lighting_texture->ChangeBindingPoint(2);
-			m_renderer->m_lighting_texture->Bind();
+			m_tonemapping_texture->ChangeBindingPoint(2);
+			m_tonemapping_texture->Bind();
 			m_renderer->m_point_sampler->Bind();
 
 			Common::RenderHelper::RenderSimpleQuad();
 
-			m_renderer->m_lighting_texture->UnBind();
-			m_renderer->m_lighting_texture->ChangeBindingPoint(binding);
+			m_tonemapping_texture->UnBind();
+			m_tonemapping_texture->ChangeBindingPoint(0);
 			m_renderer->m_point_sampler->UnBind();
 			m_renderer->m_bilinear_sampler->UnBind();
 			shader->UnBind();
-			break;
-		}
-		case 2:
-		default:
-			break;
-		}
 
-		APP_RANGE_END();
-		return;
+			APP_RANGE_END();
+		}
 	}
 
 	void PostProcessor::PrepareBloom()
@@ -189,7 +198,6 @@ namespace OGLPipeline
 		PrepareBloomDownSample();
 		PrepareBloomFilter();
 	}
-
 	
 	void PostProcessor::PrepareBloomDownSample()
 	{
@@ -225,7 +233,8 @@ namespace OGLPipeline
 
 	void PostProcessor::PrepareBloomFilter()
 	{
-		
+		// TODO : 暂时看下效果，之后要改
+		m_bloom_texture = m_renderer->m_lighting_texture;
 	}
 
 	void PostProcessor::Bloom()
@@ -262,11 +271,20 @@ namespace OGLPipeline
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		auto desc = m_bloom_downsample_chain[0]->get_description();
 		glViewport(0, 0, desc.width, desc.height);
-		m_AA_texture->Bind();
+		std::shared_ptr<Bind::ImageTexture2D> input_texture;
+		if (m_gui_block.anti_aliasing_method == ANTI_ALIASING_METHOD_FXAA)
+		{
+			input_texture = m_renderer->m_lighting_texture;
+		}
+		else
+		{
+			input_texture = m_AA_texture;
+		}
+		input_texture->Bind();
 
 		Common::RenderHelper::RenderSimpleQuad();
 
-		m_AA_texture->UnBind();
+		input_texture->UnBind();
 
 		for (int i = 1; i < 6; i++)
 		{
@@ -292,34 +310,68 @@ namespace OGLPipeline
 
 	void PostProcessor::PrepareToneGamma()
 	{
-		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "tone_gamma_vertex", "Common", "defer_shading.vert");
-		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "tone_gamma_fragment", "Common", "tone_gamma.frag");
-		auto tone_gamma_shader = Bind::ShaderProgram::Resolve("tone_gamma_shader", std::vector<GLuint>{vertex, fragment});
+		GLuint tone_vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "tone_mapping_vertex", "Common", "defer_shading.vert");
+		GLuint tone_fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "tone_mapping_fragment", "Common", "tone_mapping.frag");
+		auto tone_shader = Bind::ShaderProgram::Resolve("tone_mapping_shader", std::vector<GLuint>{ tone_vertex,tone_fragment});
+
+		GLuint gamma_vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "gamma_correction_vertex", "Common", "defer_shading.vert");
+		GLuint gamma_fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "gamma_correction_fragment", "Common", "gamma_correction.frag");
+		auto gamma_shader = Bind::ShaderProgram::Resolve("gamma_correction_shader", std::vector<GLuint>{ gamma_vertex, gamma_fragment});
 
 		OGL_TEXTURE2D_DESC desc = m_AA_texture->get_description();
-		m_tone_gamma_texture = Bind::ImageTexture2D::Resolve("tone_gamma_texture", desc, {}, 0);
+		OGL_TEXTURE_PARAMETER param = m_AA_texture->get_parameter();
+		m_tonemapping_texture = Bind::ImageTexture2D::Resolve("tone_mapping_texture", desc, param, 0);
+		m_gammacorrection_texture = Bind::ImageTexture2D::Resolve("gamma_correction_texture", desc, param, 0);
 	}
 
-	void PostProcessor::ToneMappingAndGammaCorrection()
+	void PostProcessor::ToneMapping()
 	{
-		APP_RANGE_BEGIN("Tone Mapping & Gamma Correction Pass");
+		APP_RANGE_BEGIN("Tone Mapping Pass");
 
-		m_postprocess_framebuffer->ChangeTexture(m_tone_gamma_texture);
+		m_postprocess_framebuffer->ChangeTexture(m_tonemapping_texture);
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		auto tone_gamma_shader = Bind::ShaderProgram::Resolve("tone_gamma_shader", { 0,0 });
-		tone_gamma_shader->Bind();
-		m_AA_texture->Bind();
+		auto tone_shader = Bind::ShaderProgram::Resolve("tone_mapping_shader", { 0,0 });
+		tone_shader->Bind();
+		m_bloom_texture->Bind();
 
 		Common::RenderHelper::RenderSimpleQuad();
 
-		m_AA_texture->UnBind();
-		tone_gamma_shader->UnBind();
-
-		m_output_texture = m_tone_gamma_texture;
+		m_bloom_texture->UnBind();
+		tone_shader->UnBind();
 
 		APP_RANGE_END();
-		return;
+	}
+
+	void PostProcessor::GammaCorrection()
+	{
+		APP_RANGE_BEGIN("Gamma Correction Pass");
+
+		m_postprocess_framebuffer->ChangeTexture(m_gammacorrection_texture);
+		glClearColor(0, 0, 0, 1);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		auto gamma_shader = Bind::ShaderProgram::Resolve("gamma_correction_shader", { 0,0 });
+		gamma_shader->Bind();
+		std::shared_ptr<Bind::ImageTexture2D> input_texture;
+		if (m_gui_block.anti_aliasing_method == ANTI_ALIASING_METHOD_FXAA)
+		{
+			input_texture = m_AA_texture;
+		}
+		else
+		{
+			input_texture = m_tonemapping_texture;
+		}
+		input_texture->Bind();
+
+		Common::RenderHelper::RenderSimpleQuad();
+
+		input_texture->UnBind();
+		gamma_shader->UnBind();
+
+		m_output_texture = m_gammacorrection_texture;
+
+		APP_RANGE_END();
 	}
 }

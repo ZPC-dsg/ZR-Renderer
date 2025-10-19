@@ -59,7 +59,8 @@ namespace OGLPipeline
 		void PrepareUI();
 
 		void PrepareAA();
-		void AntiAliasing();
+		void TAA();
+		void FXAA();
 
 		void PrepareBloom();
 		void PrepareBloomDownSample();
@@ -69,7 +70,8 @@ namespace OGLPipeline
 		void BloomFilter();
 
 		void PrepareToneGamma();
-		void ToneMappingAndGammaCorrection();
+		void ToneMapping();
+		void GammaCorrection();
 
 	private:
 		PostProcessGuiBlock m_gui_block;
@@ -79,9 +81,13 @@ namespace OGLPipeline
 		std::shared_ptr<Bind::RenderTarget> m_postprocess_framebuffer;
 
 		std::shared_ptr<Bind::ImageTexture2D> m_AA_texture;
+		std::shared_ptr<Bind::ImageTexture2D> m_tonemapping_texture;
+		std::shared_ptr<Bind::ImageTexture2D> m_gammacorrection_texture;
 		std::shared_ptr<Bind::ImageTexture2D> m_tone_gamma_texture;
 
 		std::array<std::shared_ptr<Bind::ImageTexture2D>, 6> m_bloom_downsample_chain;
+		std::array<std::shared_ptr<Bind::ImageTexture2D>, 6> m_bloom_horizon_filter_chain;
+		std::shared_ptr<Bind::ImageTexture2D> m_bloom_texture;
 
 		std::shared_ptr<Bind::ImageTexture2D> m_output_texture;
 	};

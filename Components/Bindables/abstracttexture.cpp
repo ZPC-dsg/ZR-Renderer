@@ -59,4 +59,17 @@ namespace Bind {
 	{
 		return m_resource;
 	}
+
+	GLuint AbstractTexture::GetResourceRaw()
+	{
+		return m_resource->GetResource();
+	}
+
+	// TODO : 目前仅支持二维纹理
+	void AbstractTexture::CopyImage(std::shared_ptr<AbstractTexture> src, GLint src_level, GLint dst_level)
+	{
+		auto src_desc = src->get_description();
+		auto dst_desc = get_description();
+		glCopyImageSubData(src->GetResourceRaw(), src_desc.target, src_level, 0, 0, 0, GetResourceRaw(), dst_desc.target, dst_level, 0, 0, 0, src_desc.width, src_desc.height, 1);
+	}
 }

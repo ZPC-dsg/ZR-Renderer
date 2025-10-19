@@ -25,6 +25,10 @@ namespace Bind {
 		bool NeedBindingPoint() noexcept override;
 
 		std::shared_ptr<AbstractResource> GetResource();
+		GLuint GetResourceRaw();
+
+		// ∏¥÷∆’˚’≈image
+		void CopyImage(std::shared_ptr<AbstractTexture> src, GLint src_level = 0, GLint dst_level = 0);
 
 	protected:
 		static unsigned char* gen_image_from_file(const std::string& path, int& width, int& height, int& channels, bool is_model = false);
