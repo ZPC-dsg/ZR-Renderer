@@ -16,6 +16,10 @@ namespace Bind {
 		}
 
 	    m_depthstencil = depthstencil->m_resource;
+		if (depthstencil)
+		{
+			m_is_depthstencil_texture = true;
+		}
 		
 		std::vector<unsigned int> slices(m_rendertargets.size() + 1, 0);
 		std::vector<unsigned int> mips(m_rendertargets.size() + 1, 0);
@@ -33,6 +37,10 @@ namespace Bind {
 		}
 
 		m_depthstencil = depthstencil->m_resource;
+		if (depthstencil)
+		{
+			m_is_depthstencil_texture = true;
+		}
 
 		gen_framebuffer(mips, slices, false, depthstencil->is_depth_only());
 	}
@@ -279,7 +287,16 @@ namespace Bind {
 
 	void RenderTarget::ChangeTexture(std::shared_ptr<AbstractTexture> new_texture, size_t pos)
 	{
-		assert(pos < m_rendertargets.size());
+		assert((m_rendertargets.size() == 0 && pos == 0) || pos < m_rendertargets.size());
+
+		if (m_rendertargets.size() == 0 && pos == 0)
+		{
+			m_rendertargets.push_back(new_texture->GetResource());
+			std::static_pointer_cast<RawTexture2D>(m_rendertargets[0])->BindSliceAsRenderTarget(m_framebuffer, 0, 0, 0);
+			CheckCompleteness();
+			return;
+		}
+
 		auto desc = new_texture->get_description();
 		if (m_rendertargets.size() > 1 && (m_width != desc.width || m_height != desc.height))
 		{
@@ -297,6 +314,58 @@ namespace Bind {
 		m_rendertargets[pos] = new_texture->GetResource();
 		auto resource = std::static_pointer_cast<RawTexture2D>(m_rendertargets[pos]);
 		resource->BindSliceAsRenderTarget(m_framebuffer, pos, 0, 0);
+		CheckCompleteness();
+	}
+
+	void RenderTarget::DestroyAndCreateNew(unsigned int width, unsigned int height)
+	{
+		if (width == m_width && height == m_height)
+		{
+			return;
+		}
+
+		m_width = width;
+		m_height = height;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+		for (int i = 0; i < m_rendertargets.size(); i++)
+		{
+			OGL_TEXTURE2D_DESC desc = std::static_pointer_cast<RawTexture2D>(m_rendertargets[i])->GetDescription();
+			desc.width = width;
+			desc.height = height;
+			std::string tag = m_rendertargets[i]->ResourceName();
+
+			// 直接默认不创建mipmap，毕竟作为rendertarget的纹理不需要mipmap
+			m_rendertargets[i] = std::static_pointer_cast<RawTexture2D>(ResourceFactory::CreateTexture2D(tag, desc, 1));
+			std::static_pointer_cast<RawTexture2D>(m_rendertargets[i])->BindSliceAsRenderTarget(m_framebuffer, i, 0, 0);
+		}
+		if (m_depthstencil)
+		{
+			GLenum internal_format = m_depthstencil->GetInternalFormat();
+			std::string tag = m_depthstencil->ResourceName();
+			if (m_is_depthstencil_texture)
+			{
+				bool depth_only = std::static_pointer_cast<RawTexture2D>(m_depthstencil)->DepthOnly();
+				OGL_TEXTURE2D_DESC desc = std::static_pointer_cast<RawTexture2D>(m_depthstencil)->GetDescription();
+				desc.width = width;
+				desc.height = height;
+				m_depthstencil = ResourceFactory::CreateTexture2D(tag, desc);
+				if(depth_only)
+					std::static_pointer_cast<RawTexture2D>(m_depthstencil)->BindSliceAsDepthComponent(m_framebuffer, 0, 0);
+				else
+					std::static_pointer_cast<RawTexture2D>(m_depthstencil)->BindSliceAsDepthStencil(m_framebuffer, 0, 0);
+			}
+			else
+			{
+				bool depth_only = std::static_pointer_cast<RawRenderBuffer>(m_depthstencil)->IsDepthOnly();
+				m_depthstencil = ResourceFactory::CreateRenderBuffer(tag, internal_format, m_width, m_height, m_samples);
+				if (depth_only)
+					std::static_pointer_cast<RawRenderBuffer>(m_depthstencil)->BindAsDepthComponent(m_framebuffer);
+				else
+					std::static_pointer_cast<RawRenderBuffer>(m_depthstencil)->BindAsDepthStencil(m_framebuffer);
+			}
+		}
+
 		CheckCompleteness();
 	}
 
@@ -364,6 +433,7 @@ namespace Bind {
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer); \
 		d->BindSliceAsDepthComponent(m_framebuffer, 0, 0); \
 		\
+		m_is_depthstencil_texture = true; \
 		return *this; \
 	}
 
@@ -395,6 +465,7 @@ namespace Bind {
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer); \
 		d->BindSliceAsDepthStencil(m_framebuffer, 0, 0); \
 		\
+		m_is_depthstencil_texture = true; \
 		return *this; \
     }
 

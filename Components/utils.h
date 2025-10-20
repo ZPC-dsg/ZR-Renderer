@@ -22,6 +22,7 @@ public:
 	virtual void render() = 0;
 	virtual void prepare() = 0;
 	virtual void prepare_ui(const std::string& name) = 0;
+	virtual void resize() = 0;
 
 	void start();
 	void terminate();
@@ -46,4 +47,8 @@ protected:
 	void processInput();
 
 	SceneGraph::Scene m_main_scene;
+
+protected:
+	unsigned int m_prev_screen_width;
+	unsigned int m_prev_screen_height;
 };

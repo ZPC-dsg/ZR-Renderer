@@ -56,6 +56,11 @@ namespace RTREffects
 		ImGui::End();
 	}
 
+	void OIT::resize()
+	{
+
+	}
+
 	void OIT::prepare_opaque()
 	{
 		m_proxy = AssimpLoader::LoadModel("Sponza", "sponza.obj", m_main_scene);

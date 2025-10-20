@@ -39,3 +39,8 @@ void DvtxTest::prepare() {
 void DvtxTest::prepare_ui(const std::string& name) {
 
 }
+
+void DvtxTest::resize()
+{
+
+}

@@ -18,6 +18,7 @@ namespace OGLPipeline
 
 	void PostProcessor::PreparePostProcess()
 	{
+		m_postprocess_framebuffer = Bind::RenderTarget::Resolve("postprocess_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
 		PrepareAA();
 		PrepareBloom();
 		PrepareToneGamma();
@@ -128,14 +129,53 @@ namespace OGLPipeline
 		}
 	}
 
+	void PostProcessor::OnResize()
+	{
+		OGL_TEXTURE2D_DESC desc;
+		desc.width = globalSettings::screen_width;
+		desc.height = globalSettings::screen_height;
+		desc.target = GL_TEXTURE_2D;
+		desc.internal_format = GL_RGBA16F;
+		desc.cpu_format = GL_RGBA;
+		desc.data_type = GL_FLOAT;
+
+		m_AA_texture->DestroyAndCreateNew(desc);
+		m_tonemapping_texture->DestroyAndCreateNew(desc);
+		m_gammacorrection_texture->DestroyAndCreateNew(desc);
+		// m_bloom_texture->DestroyAndCreateNew(desc);
+		// TODO : 暂时这么写看看效果
+		m_bloom_texture = m_renderer->m_lighting_texture;
+		m_output_texture->DestroyAndCreateNew(desc);
+
+		std::array<std::pair<unsigned int, unsigned int>, 6> tex_sizes;
+		tex_sizes[0].first = (globalSettings::screen_width + 1) / 2;
+		tex_sizes[0].second = (globalSettings::screen_height + 1) / 2;
+		for (int i = 1; i < tex_sizes.size(); i++)
+		{
+			tex_sizes[i].first = (tex_sizes[i - 1].first + 1) / 2;
+			tex_sizes[i].second = (tex_sizes[i - 1].second + 1) / 2;
+		}
+		for (int i = 0; i < 6; i++)
+		{
+			desc.width = tex_sizes[i].first;
+			desc.height = tex_sizes[i].second;
+			m_bloom_downsample_chain[i]->DestroyAndCreateNew(desc);
+		}
+	}
+
 	void PostProcessor::PrepareAA()
 	{
-		m_postprocess_framebuffer = Bind::RenderTarget::Resolve("postprocess_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
-		m_postprocess_framebuffer->AppendTexture<GL_TEXTURE_2D>("AA_texture", {}, 1, 1, GL_RGBA16F).CheckCompleteness();
+		OGL_TEXTURE2D_DESC desc;
+		desc.width = globalSettings::screen_width;
+		desc.height = globalSettings::screen_height;
+		desc.target = GL_TEXTURE_2D;
+		desc.internal_format = GL_RGBA16F;
+		desc.cpu_format = GL_RGBA;
+		desc.data_type = GL_FLOAT;
 		OGL_TEXTURE_PARAMETER param;
 		param.wrap_x = GL_CLAMP_TO_EDGE;
 		param.wrap_y = GL_CLAMP_TO_EDGE;
-		m_AA_texture = m_postprocess_framebuffer->get_texture_image<Bind::ImageTexture2D>("AA_result_texture", 0, param, 0);
+		m_AA_texture = Bind::ImageTexture2D::Resolve("FXAA_texture", desc, param, 0);
 
 		// FXAA
 		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "FXAA_vertex", "Common", "defer_shading.vert");
@@ -149,7 +189,6 @@ namespace OGLPipeline
 		{
 			APP_RANGE_BEGIN("TAA Pass");
 			m_postprocess_framebuffer->ChangeTexture(m_AA_texture);
-			glClearColor(0, 0, 0, 1);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			// TODO : 还没有实现TAA逻辑，暂时将其设置为原来的defer lighting 纹理
@@ -165,7 +204,6 @@ namespace OGLPipeline
 		{
 			APP_RANGE_BEGIN("FXAA Pass");
 			m_postprocess_framebuffer->ChangeTexture(m_AA_texture);
-			glClearColor(0, 0, 0, 1);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			auto shader = Bind::ShaderProgram::Resolve("FXAA_shader", { 0,0 });
@@ -214,7 +252,7 @@ namespace OGLPipeline
 		desc.target = GL_TEXTURE_2D;
 		desc.internal_format = GL_RGBA16F;
 		desc.cpu_format = GL_RGBA;
-		desc.data_type = GL_UNSIGNED_INT;
+		desc.data_type = GL_FLOAT;
 		OGL_TEXTURE_PARAMETER param;
 		param.wrap_x = GL_CLAMP_TO_EDGE;
 		param.wrap_y = GL_CLAMP_TO_EDGE;
@@ -267,7 +305,6 @@ namespace OGLPipeline
 		bloom_downsample_shader->Bind();
 
 		m_postprocess_framebuffer->ChangeTexture(m_bloom_downsample_chain[0]);
-		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		auto desc = m_bloom_downsample_chain[0]->get_description();
 		glViewport(0, 0, desc.width, desc.height);
@@ -289,7 +326,6 @@ namespace OGLPipeline
 		for (int i = 1; i < 6; i++)
 		{
 			m_postprocess_framebuffer->ChangeTexture(m_bloom_downsample_chain[i]);
-			glClearColor(0, 0, 0, 1);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			desc = m_bloom_downsample_chain[i]->get_description();
 			glViewport(0, 0, desc.width, desc.height);
@@ -329,7 +365,6 @@ namespace OGLPipeline
 		APP_RANGE_BEGIN("Tone Mapping Pass");
 
 		m_postprocess_framebuffer->ChangeTexture(m_tonemapping_texture);
-		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		auto tone_shader = Bind::ShaderProgram::Resolve("tone_mapping_shader", { 0,0 });
@@ -349,7 +384,6 @@ namespace OGLPipeline
 		APP_RANGE_BEGIN("Gamma Correction Pass");
 
 		m_postprocess_framebuffer->ChangeTexture(m_gammacorrection_texture);
-		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		auto gamma_shader = Bind::ShaderProgram::Resolve("gamma_correction_shader", { 0,0 });

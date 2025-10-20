@@ -30,47 +30,12 @@ namespace OGLPipeline
 	{
 		g_post_processor.Accept(this);
 
-		m_scene = AssimpLoader::LoadModel("Sponza", "sponza.obj", m_main_scene);
-
-		m_defer_framebuffer = Bind::RenderTarget::Resolve("defer_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
-		m_defer_framebuffer->AppendTexture<GL_TEXTURE_2D>("rt_postion_anisotrophy", {}, 1, 1, GL_RGBA16F)
-			.AppendTexture<GL_TEXTURE_2D>("rt_albedo_specular", {}, 1, 1, GL_RGBA8)
-			.AppendTexture<GL_TEXTURE_2D>("rt_normal_metallic_roughness", {}, 1, 1, GL_RGBA16F)
-			.AppendDepthComponent<GL_TEXTURE_2D>("rt_depth", 1, GL_DEPTH_COMPONENT32F).CheckCompleteness();
-		m_scene->AddRootBindable(m_defer_framebuffer);
-
-		m_rt_albedo_specular = m_defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("albe_spec_texture", "rt_albedo_specular", {}, 1);
-		OGL_TEXTURE_PARAMETER params;
-		params.min_filter = GL_NEAREST;
-		params.mag_filter = GL_NEAREST;
-		m_rt_position_anisotrophy = m_defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("pos_aniso_texture", "rt_postion_anisotrophy", params, 0);
-		m_rt_normal_metallic_roughness = m_defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("norm_mr_texture", "rt_normal_metallic_roughness", params, 2);
-		m_rt_depthbuffer = m_defer_framebuffer->get_texture_depthstencil<Bind::ImageTexture2D>("depth_tex", {}, 0);
-
-		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "defer_vertex", "Common", "defer.vert");
-		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "defer_fragment", "Common", "defer.frag");
-		auto defer_shader = Bind::ShaderProgram::Resolve("defer_shader", std::vector<GLuint>{vertex, fragment});
-		m_scene->AddRootBindable(defer_shader);
-
-		m_scene->AddRootUniformRule<SceneGraph::ConfigurationType::Transformation>(defer_shader->EditUniform("model").GetLeafUniform(),
-			[](glm::mat4 model)->glm::mat4 {return model; })
-			.AddRootUniformRule<SceneGraph::ConfigurationType::MaterialMetallic>(defer_shader->EditUniform("metallic").GetLeafUniform(),
-				[](float metallic)->float {return metallic; })
-			.AddRootUniformRule<SceneGraph::ConfigurationType::MaterialRoughness>(defer_shader->EditUniform("roughness").GetLeafUniform(),
-				[](float roughness)->float {return roughness; });
-		std::vector<DrawItems::VertexType> instruction{ DrawItems::VertexType::Position,DrawItems::VertexType::Normal,DrawItems::VertexType::Tangent,
-			DrawItems::VertexType::Texcoord };
-		m_scene->AddRootVertexRule(instruction);
-		m_scene->AddRootTextureRule("diffuse_tex", 0, SceneGraph::Material::TextureCategory::DIFFUSE).
-			AddRootTextureRule("specular_tex", 1, SceneGraph::Material::TextureCategory::SPECULAR).
-			AddRootTextureRule("normal_tex", 2, SceneGraph::Material::TextureCategory::NORMAL);
-		m_scene->ScaleModel(glm::vec3(0.2f));
-
-		m_scene->Cook();
-
+		PrepareDeferBuffers();
+		PrepareScene();
 		PrepareSamplers();
 		PrepareDeferLighting();
 		PrepareLightBuffer();
+
 		g_post_processor.PreparePostProcess();
 	}
 
@@ -108,6 +73,73 @@ namespace OGLPipeline
 		ImGui::End();
 	}
 
+	void DeferRenderer::resize()
+	{
+		m_defer_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height);
+		OGL_TEXTURE_PARAMETER params;
+		params.wrap_x = GL_CLAMP_TO_EDGE;
+		params.wrap_y = GL_CLAMP_TO_EDGE;
+		m_rt_albedo_specular->UpdateNewResource(m_defer_framebuffer->get_render_target(1), params);
+		params.min_filter = GL_NEAREST;
+		params.mag_filter = GL_NEAREST;
+		m_rt_position_anisotrophy->UpdateNewResource(m_defer_framebuffer->get_render_target(0), params);
+		m_rt_normal_metallic_roughness->UpdateNewResource(m_defer_framebuffer->get_render_target(2), params);
+		m_rt_depthbuffer->UpdateNewResource(m_defer_framebuffer->get_depth_stencil(), params);
+
+		m_defer_lighting_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height);
+		params.min_filter = GL_LINEAR;
+		params.mag_filter = GL_LINEAR;
+		m_lighting_texture->UpdateNewResource(m_defer_lighting_framebuffer->get_render_target(0), params);
+
+		g_post_processor.OnResize();
+	}
+
+	void DeferRenderer::PrepareScene()
+	{
+		m_scene = AssimpLoader::LoadModel("Sponza", "sponza.obj", m_main_scene);
+		m_scene->AddRootBindable(m_defer_framebuffer);
+
+		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "defer_vertex", "Common", "defer.vert");
+		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "defer_fragment", "Common", "defer.frag");
+		auto defer_shader = Bind::ShaderProgram::Resolve("defer_shader", std::vector<GLuint>{vertex, fragment});
+		m_scene->AddRootBindable(defer_shader);
+
+		m_scene->AddRootUniformRule<SceneGraph::ConfigurationType::Transformation>(defer_shader->EditUniform("model").GetLeafUniform(),
+			[](glm::mat4 model)->glm::mat4 {return model; })
+			.AddRootUniformRule<SceneGraph::ConfigurationType::MaterialMetallic>(defer_shader->EditUniform("metallic").GetLeafUniform(),
+				[](float metallic)->float {return metallic; })
+			.AddRootUniformRule<SceneGraph::ConfigurationType::MaterialRoughness>(defer_shader->EditUniform("roughness").GetLeafUniform(),
+				[](float roughness)->float {return roughness; });
+		std::vector<DrawItems::VertexType> instruction{ DrawItems::VertexType::Position,DrawItems::VertexType::Normal,DrawItems::VertexType::Tangent,
+			DrawItems::VertexType::Texcoord };
+		m_scene->AddRootVertexRule(instruction);
+		m_scene->AddRootTextureRule("diffuse_tex", 0, SceneGraph::Material::TextureCategory::DIFFUSE).
+			AddRootTextureRule("specular_tex", 1, SceneGraph::Material::TextureCategory::SPECULAR).
+			AddRootTextureRule("normal_tex", 2, SceneGraph::Material::TextureCategory::NORMAL);
+		m_scene->ScaleModel(glm::vec3(0.2f));
+
+		m_scene->Cook();
+	}
+
+	void DeferRenderer::PrepareDeferBuffers()
+	{
+		m_defer_framebuffer = Bind::RenderTarget::Resolve("defer_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
+		m_defer_framebuffer->AppendTexture<GL_TEXTURE_2D>("rt_postion_anisotrophy", {}, 1, 1, GL_RGBA16F)
+			.AppendTexture<GL_TEXTURE_2D>("rt_albedo_specular", {}, 1, 1, GL_RGBA8)
+			.AppendTexture<GL_TEXTURE_2D>("rt_normal_metallic_roughness", {}, 1, 1, GL_RGBA16F)
+			.AppendDepthComponent<GL_TEXTURE_2D>("rt_depth", 1, GL_DEPTH_COMPONENT32F).CheckCompleteness();
+
+		OGL_TEXTURE_PARAMETER params;
+		params.wrap_x = GL_CLAMP_TO_EDGE;
+		params.wrap_y = GL_CLAMP_TO_EDGE;
+		m_rt_albedo_specular = m_defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("albe_spec_texture", "rt_albedo_specular", params, 1);
+		params.min_filter = GL_NEAREST;
+		params.mag_filter = GL_NEAREST;
+		m_rt_position_anisotrophy = m_defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("pos_aniso_texture", "rt_postion_anisotrophy", params, 0);
+		m_rt_normal_metallic_roughness = m_defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("norm_mr_texture", "rt_normal_metallic_roughness", params, 2);
+		m_rt_depthbuffer = m_defer_framebuffer->get_texture_depthstencil<Bind::ImageTexture2D>("depth_tex", params, 0);
+	}
+
 	void DeferRenderer::PrepareSamplers()
 	{
 		OGL_TEXTURE_PARAMETER param;
@@ -126,10 +158,13 @@ namespace OGLPipeline
 
 	void DeferRenderer::PrepareDeferLighting()
 	{
-		m_defer_lighting_framebuffer = std::make_shared<Bind::RenderTarget>("defer_lighting_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
+		m_defer_lighting_framebuffer = Bind::RenderTarget::Resolve("defer_lighting_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
 		m_defer_lighting_framebuffer->AppendTexture<GL_TEXTURE_2D>("defer_lighting_texture", {}, 1, 1, GL_RGBA16F).CheckCompleteness();
 
-		m_lighting_texture = m_defer_lighting_framebuffer->get_texture_image<Bind::ImageTexture2D>("defer_shading", "defer_lighting_texture", {}, 0);
+		OGL_TEXTURE_PARAMETER params;
+		params.wrap_x = GL_CLAMP_TO_EDGE;
+		params.wrap_y = GL_CLAMP_TO_EDGE;
+		m_lighting_texture = m_defer_lighting_framebuffer->get_texture_image<Bind::ImageTexture2D>("defer_shading", "defer_lighting_texture", params, 0);
 
 		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "defer_lighting_vertex", "Common", "defer_shading.vert");
 		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "defer_lighting_fragment", "Common", "defer_shading.frag");
@@ -451,7 +486,6 @@ namespace OGLPipeline
 	void DeferRenderer::DisplayDefer()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_CULL_FACE);
 
@@ -526,7 +560,6 @@ namespace OGLPipeline
 		APP_RANGE_BEGIN("defer_lighting");
 
 		m_defer_lighting_framebuffer->Bind();
-		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		glDisable(GL_CULL_FACE);

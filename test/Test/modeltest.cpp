@@ -68,3 +68,8 @@ void ModelTest::render() {
 	m_proxy->Render();
 	m_drawables[0]->Render();
 }
+
+void ModelTest::resize()
+{
+
+}

@@ -49,10 +49,12 @@ namespace OGLPipeline
 		void render() override;
 		void prepare() override;
 		void prepare_ui(const std::string& name) override;
+		void resize() override;
 
 	private:
+		void PrepareScene();
+		void PrepareDeferBuffers();
 		void PrepareSamplers();
-
 		void PrepareDeferLighting();
 		void PrepareLightBuffer();
 

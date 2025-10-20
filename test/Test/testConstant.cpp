@@ -69,3 +69,8 @@ void TestConstant::render() {
 void TestConstant::prepare_ui(const std::string& name) {
 
 }
+
+void TestConstant::resize()
+{
+
+}

@@ -13,6 +13,7 @@ public:
 	void render() override;
 	void prepare() override; 
 	void prepare_ui(const std::string& name) override;
+	void resize() override;
 
 	std::shared_ptr<Shader> m_shader;
 	std::unique_ptr<Box> m_box;

@@ -17,6 +17,7 @@ public:
 	void prepare() override;
 	void prepare_ui(const std::string& name) override;
 	void render() override;
+	void resize() override;
 
 private:
 	std::shared_ptr<Bind::ShaderProgram> m_shader;

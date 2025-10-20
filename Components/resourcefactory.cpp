@@ -126,6 +126,12 @@ bool RawBuffer::UnMapRange() noxnd {
 	}
 }
 
+GLenum RawBuffer::GetInternalFormat() const
+{
+	// TODO : 目前暂时不需要，以后需要时实现
+	return GL_RGBA8;
+}
+
 //RawTexture
 RawTexture2D::RawTexture2D(const std::string& name, GLenum target)
 	:AbstractResource(name)
@@ -283,6 +289,11 @@ bool RawTexture2D::DepthOnly() const noexcept {
 		m_desc.internal_format == GL_DEPTH_COMPONENT32F;
 }
 
+GLenum RawTexture2D::GetInternalFormat() const
+{
+	return m_desc.internal_format;
+}
+
 //RenderBuffer
 RawRenderBuffer::RawRenderBuffer(const std::string& name, GLenum internal_format) :AbstractResource(name), m_internal_format(internal_format) {
 	glCreateRenderbuffers(1, &m_resource);
@@ -325,4 +336,9 @@ bool RawRenderBuffer::IsDepthOnly() const noexcept
 {
 	return m_internal_format == GL_DEPTH_COMPONENT16 || m_internal_format == GL_DEPTH_COMPONENT24 || m_internal_format == GL_DEPTH_COMPONENT32
 		|| m_internal_format == GL_DEPTH_COMPONENT32F;
+}
+
+GLenum RawRenderBuffer::GetInternalFormat() const
+{
+	return m_internal_format;
 }

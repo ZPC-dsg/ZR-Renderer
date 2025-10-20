@@ -52,6 +52,11 @@ namespace RTREffects {
 		m_backgroundShader->UnBind();
 	}
 
+	void PBR_IBL::resize()
+	{
+
+	}
+
 	std::string PBR_IBL::prepare_scene() {
 		using Mat = SceneGraph::Material::TextureCategory;
 		using Vert = DrawItems::VertexType;

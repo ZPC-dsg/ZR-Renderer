@@ -73,6 +73,11 @@ namespace RTREffects
 		ImGui::End();
 	}
 
+	void DeferRenderer::resize()
+	{
+
+	}
+
 	void DeferRenderer::prepare_scene()
 	{
 		m_proxy = AssimpLoader::LoadModel("Sponza", "sponza.obj", m_main_scene);

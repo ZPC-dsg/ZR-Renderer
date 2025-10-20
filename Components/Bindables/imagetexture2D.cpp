@@ -48,7 +48,7 @@ namespace Bind {
 		:AbstractTexture(nullptr, param, unit, tag)
 	{
 		std::string resource_name = tag + "_resource";
-		m_resource = std::dynamic_pointer_cast<RawTexture2D>(ResourceFactory::CreateTexture2D(resource_name, desc));
+		m_resource = std::static_pointer_cast<RawTexture2D>(ResourceFactory::CreateTexture2D(resource_name, desc));
 		m_resource->SetParameters(param);
 	}
 

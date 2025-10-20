@@ -128,6 +128,10 @@ void Utils::renderQuad() {
 }
 
 void Utils::start() {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    m_prev_screen_width = globalSettings::screen_width;
+    m_prev_screen_height = globalSettings::screen_height;
+
     prepare();
     
     while (!glfwWindowShouldClose(globalSettings::mainWindow)) {
@@ -139,13 +143,20 @@ void Utils::start() {
 
         if (globalSettings::window_valid)
         {
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            if (m_prev_screen_width != globalSettings::screen_width || m_prev_screen_height != globalSettings::screen_height)
+            {
+                resize();
+            }
+
             render();
 
             ui_newFrame();
             prepare_ui(m_main_scene.GetName());
             draw_ui();
         }
+
+        m_prev_screen_width = globalSettings::screen_width;
+        m_prev_screen_height = globalSettings::screen_height;
 
         glfwSwapBuffers(globalSettings::mainWindow);
         glfwPollEvents();

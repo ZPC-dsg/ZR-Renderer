@@ -54,6 +54,8 @@ namespace OGLPipeline
 		void SetOption(PostProcessOptions category, uint16_t option);
 
 		void Accept(DeferRenderer* renderer);
+
+		void OnResize();
 		
 	private:
 		void PrepareUI();
@@ -83,7 +85,6 @@ namespace OGLPipeline
 		std::shared_ptr<Bind::ImageTexture2D> m_AA_texture;
 		std::shared_ptr<Bind::ImageTexture2D> m_tonemapping_texture;
 		std::shared_ptr<Bind::ImageTexture2D> m_gammacorrection_texture;
-		std::shared_ptr<Bind::ImageTexture2D> m_tone_gamma_texture;
 
 		std::array<std::shared_ptr<Bind::ImageTexture2D>, 6> m_bloom_downsample_chain;
 		std::array<std::shared_ptr<Bind::ImageTexture2D>, 6> m_bloom_horizon_filter_chain;

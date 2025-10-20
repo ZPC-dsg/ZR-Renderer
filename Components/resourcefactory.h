@@ -38,6 +38,7 @@ public:
 
 	inline std::string ResourceName() const noexcept { return m_name; }
 	inline GLuint GetResource() const noexcept { return m_resource; }
+	virtual GLenum GetInternalFormat() const = 0;
 
 protected:
 	AbstractResource(const std::string& name);
@@ -63,6 +64,8 @@ public:
 	inline GLbitfield StorageFlags() const noexcept { return m_storage_flags; };
 	GLbitfield MapFlags() const noexcept;
 	inline bool HasFlag(GLbitfield flag) const noexcept { return (m_storage_flags & flag) == flag; };
+
+	GLenum GetInternalFormat() const override;
 
 private:
 	RawBuffer(const std::string& name);
@@ -100,6 +103,8 @@ public:
 	inline OGL_TEXTURE2D_DESC GetDescription() const noexcept { return m_desc; }
 	bool DepthOnly() const noexcept;
 
+	GLenum GetInternalFormat() const override;
+
 private:
 	RawTexture2D(const std::string& name, GLenum target);
 
@@ -124,6 +129,8 @@ public:
 	inline size_t GetHeight() const noexcept { return m_height; }
 
 	bool IsDepthOnly() const noexcept;
+
+	GLenum GetInternalFormat() const override;
 
 private:
 	RawRenderBuffer(const std::string& name, GLenum internal_format = GL_DEPTH_COMPONENT24);

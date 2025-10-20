@@ -27,6 +27,7 @@ namespace RTREffects {
 		void render() override;
 		void prepare() override;
 		void prepare_ui(const std::string& name) override;
+		void resize() override;
 
 	private:
 		std::string prepare_scene();

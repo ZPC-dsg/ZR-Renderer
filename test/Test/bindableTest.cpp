@@ -58,3 +58,8 @@ void BindableTest::render() {
 void BindableTest::prepare_ui(const std::string& name) {
 
 }
+
+void BindableTest::resize()
+{
+
+}

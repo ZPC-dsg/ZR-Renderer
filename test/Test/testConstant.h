@@ -14,6 +14,7 @@ public:
 	void prepare() override;
 	void render() override;
 	void prepare_ui(const std::string& name) override;
+	void resize() override;
 
 	std::shared_ptr<Shader> rshader;
 	std::shared_ptr<Bind::ConstantBuffer> m_constbuffer;
