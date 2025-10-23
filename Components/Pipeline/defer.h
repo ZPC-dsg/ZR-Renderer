@@ -65,6 +65,9 @@ namespace OGLPipeline
 		void DeferLighting();
 
 	private:
+		size_t m_scene_index = 0; // ƒ¨»œ‰÷»æSponza
+		static const char* scene_names[];
+
 		std::string m_ui_name;
 
 		uint16_t m_defer_display_mode = DEFER_DISPLAY_MODE_NUM;
@@ -94,6 +97,6 @@ namespace OGLPipeline
 		std::shared_ptr<Bind::Sampler> m_bilinear_sampler;
 		std::shared_ptr<Bind::Sampler> m_trilinear_sampler;
 
-		std::shared_ptr<SceneGraph::ModelProxy> m_scene;
+		std::vector<std::shared_ptr<SceneGraph::ModelProxy>> m_scenes;
 	};
 }

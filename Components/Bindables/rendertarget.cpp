@@ -178,7 +178,8 @@ namespace Bind {
 			}
 		}
 	}
-
+	
+	// 注意在render target数目改变之后也需要call一次这个函数
 	void RenderTarget::Bind() noxnd {
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
 		if (m_rendertargets.size())
@@ -285,15 +286,19 @@ namespace Bind {
 		return typeid(RenderTarget);
 	}
 
-	void RenderTarget::ChangeTexture(std::shared_ptr<AbstractTexture> new_texture, size_t pos)
+	void RenderTarget::ChangeTexture(std::shared_ptr<AbstractTexture> new_texture, size_t pos, bool clear_color)
 	{
 		assert((m_rendertargets.size() == 0 && pos == 0) || pos < m_rendertargets.size());
+
+		Bind();
 
 		if (m_rendertargets.size() == 0 && pos == 0)
 		{
 			m_rendertargets.push_back(new_texture->GetResource());
 			std::static_pointer_cast<RawTexture2D>(m_rendertargets[0])->BindSliceAsRenderTarget(m_framebuffer, 0, 0, 0);
 			CheckCompleteness();
+			if (clear_color)
+				glClear(GL_COLOR_BUFFER_BIT);
 			return;
 		}
 
@@ -315,6 +320,8 @@ namespace Bind {
 		auto resource = std::static_pointer_cast<RawTexture2D>(m_rendertargets[pos]);
 		resource->BindSliceAsRenderTarget(m_framebuffer, pos, 0, 0);
 		CheckCompleteness();
+		if (clear_color)
+			glClear(GL_COLOR_BUFFER_BIT);
 	}
 
 	void RenderTarget::DestroyAndCreateNew(unsigned int width, unsigned int height)

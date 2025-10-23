@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <array>
+#include <glm/glm.hpp>
 
 #define ANTI_ALIASING_METHOD_MSAA 0
 #define ANTI_ALIASING_METHOD_FXAA 1
@@ -24,13 +25,22 @@ namespace OGLPipeline
 
 	struct PostProcessGuiBlock
 	{
+		// AA
 		uint16_t anti_aliasing_method = ANTI_ALIASING_METHOD_NUM;
+		// FXAA
 		float FXAA_threshold_min = 0.0833;
 		float FXAA_threshold = 0.166;
 		float FXAA_subpixel_quality = 0.75;
 
+		// Bloom
 		uint16_t bloom_downsample_display_level = 0; // 默认不显示bloom downsample结果
 		uint16_t bloom_filter_display_level = 0; // 默认不显示bloom filter结果
+
+		std::array<float, 6> bloom_filter_kernel_sizes = { 0.3,1.0,2.0,10.0,30.0,64.0 };
+		std::array<glm::vec3, 6> bloom_tint_weights = { glm::vec3(0.3465),glm::vec3(0.138),glm::vec3(0.1176),glm::vec3(0.066),glm::vec3(0.066),glm::vec3(0.061) };
+
+		// Tone Mapping
+		float tone_mapping_exposure = 1.0f;
 	};
 
 	class DeferRenderer;
@@ -88,7 +98,6 @@ namespace OGLPipeline
 
 		std::array<std::shared_ptr<Bind::ImageTexture2D>, 6> m_bloom_downsample_chain;
 		std::array<std::shared_ptr<Bind::ImageTexture2D>, 6> m_bloom_horizon_filter_chain;
-		std::shared_ptr<Bind::ImageTexture2D> m_bloom_texture;
 
 		std::shared_ptr<Bind::ImageTexture2D> m_output_texture;
 	};

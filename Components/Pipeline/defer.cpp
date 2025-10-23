@@ -10,6 +10,11 @@
 
 namespace OGLPipeline
 {
+	const char* DeferRenderer::scene_names[] =
+	{
+		"Sponza",
+	};
+
 	DeferRenderer::DeferRenderer(const std::string& scene_name, const std::string ui_name)
 		:Utils(scene_name), m_ui_name(ui_name)
 	{
@@ -42,6 +47,10 @@ namespace OGLPipeline
 	void DeferRenderer::prepare_ui(const std::string& name)
 	{
 		ImGui::Begin(name.c_str());
+
+		int current_scene = static_cast<int>(m_scene_index);
+		ImGui::Combo("Scene List", &current_scene, scene_names, IM_ARRAYSIZE(scene_names));
+		m_scene_index = current_scene;
 
 		// Defer RenderTargets Display
 		if (ImGui::CollapsingHeader("Defer Display Mode", false))
@@ -96,15 +105,16 @@ namespace OGLPipeline
 
 	void DeferRenderer::PrepareScene()
 	{
-		m_scene = AssimpLoader::LoadModel("Sponza", "sponza.obj", m_main_scene);
-		m_scene->AddRootBindable(m_defer_framebuffer);
+		// Sponza
+		m_scenes.push_back(AssimpLoader::LoadModel("Sponza", "sponza.obj", m_main_scene));
+		m_scenes[0]->AddRootBindable(m_defer_framebuffer);
 
 		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "defer_vertex", "Common", "defer.vert");
 		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "defer_fragment", "Common", "defer.frag");
 		auto defer_shader = Bind::ShaderProgram::Resolve("defer_shader", std::vector<GLuint>{vertex, fragment});
-		m_scene->AddRootBindable(defer_shader);
+		m_scenes[0]->AddRootBindable(defer_shader);
 
-		m_scene->AddRootUniformRule<SceneGraph::ConfigurationType::Transformation>(defer_shader->EditUniform("model").GetLeafUniform(),
+		m_scenes[0]->AddRootUniformRule<SceneGraph::ConfigurationType::Transformation>(defer_shader->EditUniform("model").GetLeafUniform(),
 			[](glm::mat4 model)->glm::mat4 {return model; })
 			.AddRootUniformRule<SceneGraph::ConfigurationType::MaterialMetallic>(defer_shader->EditUniform("metallic").GetLeafUniform(),
 				[](float metallic)->float {return metallic; })
@@ -112,13 +122,13 @@ namespace OGLPipeline
 				[](float roughness)->float {return roughness; });
 		std::vector<DrawItems::VertexType> instruction{ DrawItems::VertexType::Position,DrawItems::VertexType::Normal,DrawItems::VertexType::Tangent,
 			DrawItems::VertexType::Texcoord };
-		m_scene->AddRootVertexRule(instruction);
-		m_scene->AddRootTextureRule("diffuse_tex", 0, SceneGraph::Material::TextureCategory::DIFFUSE).
+		m_scenes[0]->AddRootVertexRule(instruction);
+		m_scenes[0]->AddRootTextureRule("diffuse_tex", 0, SceneGraph::Material::TextureCategory::DIFFUSE).
 			AddRootTextureRule("specular_tex", 1, SceneGraph::Material::TextureCategory::SPECULAR).
 			AddRootTextureRule("normal_tex", 2, SceneGraph::Material::TextureCategory::NORMAL);
-		m_scene->ScaleModel(glm::vec3(0.2f));
+		m_scenes[0]->ScaleModel(glm::vec3(0.2f));
 
-		m_scene->Cook();
+		m_scenes[0]->Cook();
 	}
 
 	void DeferRenderer::PrepareDeferBuffers()
@@ -478,7 +488,7 @@ namespace OGLPipeline
 		defer_shader->EditUniform("view") = globalSettings::mainCamera.get_view();
 		defer_shader->EditUniform("projection") = globalSettings::mainCamera.get_perspective();
 
-		m_scene->Render();
+		m_scenes[m_scene_index]->Render();
 
 		APP_RANGE_END();
 	}

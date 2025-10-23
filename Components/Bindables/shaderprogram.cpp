@@ -74,57 +74,95 @@ namespace Bind {
 			glUniform1f(location, std::get<float>(data));
 			return;
 		case LeafType::Float2:
-			glUniform2fv(location, 1, &(std::get<glm::vec2>(data)[0]));
+		{
+			glm::vec2 temp = std::get<glm::vec2>(data);
+			glUniform2fv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Float3:
-			glUniform3fv(location, 1, &(std::get<glm::vec3>(data)[0]));
+		{
+			glm::vec3 temp = std::get<glm::vec3>(data);
+			glUniform3fv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Float4:
-			glUniform4fv(location, 1, &(std::get<glm::vec4>(data)[0]));
+		{
+			glm::vec4 temp = std::get<glm::vec4>(data);
+			glUniform4fv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Double:
 			glUniform1d(location, std::get<double>(data));
 			return;
 		case LeafType::Double2:
-			glUniform2dv(location, 1, &(std::get<glm::dvec2>(data)[0]));
+		{
+			glm::dvec2 temp = std::get<glm::dvec2>(data);
+			glUniform2dv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Double3:
-			glUniform3dv(location, 1, &(std::get<glm::dvec3>(data)[0]));
+		{
+			glm::dvec3 temp = std::get<glm::dvec3>(data);
+			glUniform3dv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Double4:
-			glUniform4dv(location, 1, &(std::get<glm::dvec4>(data)[0]));
+		{
+			glm::dvec4 temp = std::get<glm::dvec4>(data);
+			glUniform4dv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Int:
 			glUniform1i(location, std::get<int>(data));
 			return;
 		case LeafType::Int2:
-			glUniform2iv(location, 1, &(std::get<glm::ivec2>(data)[0]));
+		{
+			glm::ivec2 temp = std::get<glm::ivec2>(data);
+			glUniform2iv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Int3:
-			glUniform3iv(location, 1, &(std::get<glm::ivec3>(data)[0]));
+		{
+			glm::ivec3 temp = std::get<glm::ivec3>(data);
+			glUniform3iv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Int4:
-			glUniform4iv(location, 1, &(std::get<glm::ivec4>(data)[0]));
+		{
+			glm::ivec4 temp = std::get<glm::ivec4>(data);
+			glUniform4iv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Uint:
 			glUniform1ui(location, std::get<unsigned int>(data));
 			return;
 		case LeafType::Uint2:
-			glUniform2uiv(location, 1, &(std::get<glm::uvec2>(data)[0]));
+		{
+			glm::uvec2 temp = std::get<glm::uvec2>(data);
+			glUniform2uiv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Uint3:
-			glUniform3uiv(location, 1, &(std::get<glm::uvec3>(data)[0]));
+		{
+			glm::uvec3 temp = std::get<glm::uvec3>(data);
+			glUniform3uiv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Uint4:
-			glUniform4uiv(location, 1, &(std::get<glm::uvec4>(data)[0]));
+		{
+			glm::uvec4 temp = std::get<glm::uvec4>(data);
+			glUniform4uiv(location, 1, &(temp[0]));
 			return;
+		}
 		case LeafType::Bool:
 			glUniform1i(location, std::get<bool>(data));
 			return;
 		case LeafType::Bool2:
+		{
 			auto l_data = std::get<glm::bvec2>(data);
 			glUniform2i(location, (int)l_data[0], (int)l_data[1]);
 			return;
+		}
 		case LeafType::Bool3: {
 			auto l_data = std::get<glm::bvec3>(data);
 			glUniform3i(location, (int)l_data[0], (int)l_data[1], (int)l_data[2]);

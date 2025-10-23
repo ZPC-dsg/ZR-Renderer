@@ -124,7 +124,7 @@ namespace Bind {
 
 		void ClearTextures(unsigned int new_width, unsigned int new_height, GLenum internal_format = GL_RGB8, unsigned int new_samples = 1);
 
-		void ChangeTexture(std::shared_ptr<AbstractTexture> new_texture, size_t pos = 0);
+		void ChangeTexture(std::shared_ptr<AbstractTexture> new_texture, size_t pos = 0, bool clear_color = true);
 		// 将全部的渲染目标（包括深度模板缓冲）销毁并重新创建，仅适用于所有的render target都是由append texture创建的
 		void DestroyAndCreateNew(unsigned int width, unsigned int height);
 
