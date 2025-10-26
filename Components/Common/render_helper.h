@@ -72,6 +72,7 @@ namespace Common
 			}
 		}
 
+		// TODO : 之后会使用另外的方式pack法线等单位向量
 		// 将如法线这样的pack在两通道内的单位向量unpack并渲染到屏幕上
 		// channels指定pack位置，输入要求正好置位两位，默认为RG通道
 		// 另外，要求texture在pack的时候一定是按顺序pack前两个分量

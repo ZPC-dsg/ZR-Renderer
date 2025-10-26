@@ -182,6 +182,7 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="Common\computeProxy.h" />
     <ClInclude Include="Common\light_common.h" />
+    <ClInclude Include="Common\math_const.h" />
     <ClInclude Include="Common\random_generator.h" />
     <ClInclude Include="Common\render_helper.h" />
     <ClInclude Include="computeshader.h" />

@@ -25,7 +25,7 @@ void main()
 {
     vec3 albedo_color = texture(diffuse_tex, texCoord).rgb;
     float specular_color = texture(specular_tex, texCoord).r;
-    vec3 local_normal = normalize(2.0 * texture(normal_tex, texCoord).rgb - 1.0);
+    vec3 local_normal = 2.0 * texture(normal_tex, texCoord).rgb - 1.0;
 
     vec3 albedo_linear = Pow3(albedo_color, 2.2); // 简单伽马矫正，实际上伽马矫正是一个分段函数，这里简单地使用2.2次方
 
@@ -33,7 +33,10 @@ void main()
     mat3 TBN = mat3(world_tangent, world_bitangent, world_normal);
     vec3 real_normal = normalize(TBN * local_normal);
 
+    float roughness_real = max(roughness, 0.02);
+    roughness_real *= sign(real_normal.z);
+
     position_anisotrophy = vec4(world_position, 0.0); // 暂时不考虑各向异性
     albedo_specular = vec4(albedo_linear, specular_color);
-    normal_metallic_roughness = vec4(real_normal.xy, metallic, roughness);
+    normal_metallic_roughness = vec4(real_normal.xy, metallic, roughness_real);
 }

@@ -30,9 +30,12 @@ namespace OGLPipeline
 	{
 		RenderDefer();
 		RenderAO();
-		DeferLighting();
-		g_post_processor.MainProcessor();
-		DisplayDefer();
+		if (!m_should_display_ao)
+		{
+			DeferLighting();
+			g_post_processor.MainProcessor();
+			DisplayDefer();
+		}
 	}
 
 	// TODO ：屏幕尺寸变化处理逻辑后续补充
@@ -118,6 +121,10 @@ namespace OGLPipeline
 
 		m_AO_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height);
 		m_AO_texture->UpdateNewResource(m_AO_framebuffer->get_render_target(0), params);
+		OGL_TEXTURE2D_DESC desc = m_AO_filtered_texture->get_description();
+		desc.width = globalSettings::screen_width;
+		desc.height = globalSettings::screen_height;
+		m_AO_filtered_texture->DestroyAndCreateNew(desc);
 
 		PrepareDefaultTextures();
 
@@ -198,7 +205,7 @@ namespace OGLPipeline
 		desc.data_type = GL_UNSIGNED_BYTE;
 
 		std::vector<uint8_t> data(globalSettings::screen_width * globalSettings::screen_height, 255);
-		m_default_white_texture = Bind::ImageTexture2D::Resolve("default_white", desc, {}, 0, (void*)data.data());
+		m_default_white_texture = Bind::ImageTexture2D::Resolve("default_white", desc, {}, 3, (void*)data.data());
 	}
 
 	void DeferRenderer::PrepareDeferLighting()
@@ -247,6 +254,14 @@ namespace OGLPipeline
 		m_AO_framebuffer = Bind::RenderTarget::Resolve("AO_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
 		m_AO_framebuffer->AppendTexture<GL_TEXTURE_2D>("AO_texture", {}, 1, 1, GL_R16F);
 		m_AO_texture = m_AO_framebuffer->get_texture_image<Bind::ImageTexture2D>("AO_image", 0, {}, 0);
+		OGL_TEXTURE2D_DESC desc;
+		desc.target = GL_TEXTURE_2D;
+		desc.width = globalSettings::screen_width;
+		desc.height = globalSettings::screen_height;
+		desc.internal_format = GL_R16F;
+		desc.cpu_format = GL_RED;
+		desc.data_type = GL_FLOAT;
+		m_AO_filtered_texture = Bind::ImageTexture2D::Resolve("AO_filtered_texture", desc, {}, 3);
 
 		// SSAO
 		GenerateSSAORandomTexture();
@@ -254,6 +269,9 @@ namespace OGLPipeline
 		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "simple_SSAO_vertex", "Common", "defer_shading.vert");
 		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "simple_SSAO_fragment", "AO", "SSAO_simple.frag");
 		auto SSAO_simple_shader = Bind::ShaderProgram::Resolve("simple_SSAO_shader", { vertex,fragment });
+		GLuint filter_vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "simple_SSAO_filter_vertex", "Common", "defer_shading.vert");
+		GLuint filter_fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "simple_SSAO_filter_fragment", "AO", "SSAO_simple_filter.frag");
+		auto SSAO_simple_filter_shader = Bind::ShaderProgram::Resolve("simple_SSAO_filter_shader", { filter_vertex,filter_fragment });
 	}
 
 	void DeferRenderer::GenerateSSAORandomTexture()
@@ -266,7 +284,7 @@ namespace OGLPipeline
 
 		auto Quantize8SignedByte = [](float f)->uint8_t
 			{
-				float uf = f * 2.0f + 1.0f;
+				float uf = f * 0.5f + 0.5f;
 				int i = (int)(uf * 255.0f + 0.5f);
 				return (uint8_t)i;
 			};
@@ -290,17 +308,19 @@ namespace OGLPipeline
 		}
 
 		const unsigned int extent = 64;
-		const unsigned int block_size = 4 * 4 * 16;
-		const unsigned int row_size = extent * 16;
-		std::vector<uint8_t> real_data(extent * extent);
-		for (int i = 0; i < 4; i++)
+		const unsigned int block_size = 4 * 4 * 2;
+		const unsigned int row_size = extent * 2;
+		std::vector<uint8_t> real_data(extent * extent * 2);
+		for (int i = 0; i < 16; i++)
 		{
-			for (int j = 0; j < 4; j++)
+			for (int j = 0; j < 16; j++)
 			{
-				std::copy(bases.begin(), bases.begin() + 8, real_data.begin() + (i * 4 + j) * block_size);
-				std::copy(bases.begin() + 8, bases.begin() + 16, real_data.begin() + (i * 4 + j) * block_size + row_size);
-				std::copy(bases.begin() + 16, bases.begin() + 24, real_data.begin() + (i * 4 + j) * block_size + 2 * row_size);
-				std::copy(bases.begin() + 24, bases.end(), real_data.begin() + (i * 4 + j) * block_size + 3 * row_size);
+				size_t start = (i * 4) * row_size + (j * 4) * 2;
+
+				std::copy(bases.begin(), bases.begin() + 8, real_data.begin() + start);
+				std::copy(bases.begin() + 8, bases.begin() + 16, real_data.begin() + start + row_size);
+				std::copy(bases.begin() + 16, bases.begin() + 24, real_data.begin() + start + 2 * row_size);
+				std::copy(bases.begin() + 24, bases.end(), real_data.begin() + start + 3 * row_size);
 			}
 		}
 
@@ -309,7 +329,7 @@ namespace OGLPipeline
 		desc.width = extent;
 		desc.height = extent;
 		desc.internal_format = GL_RG8;
-		desc.cpu_format = GL_RG8;
+		desc.cpu_format = GL_RG;
 		OGL_TEXTURE_PARAMETER param;
 		param.wrap_x = GL_REPEAT;
 		param.wrap_y = GL_REPEAT;
@@ -322,7 +342,7 @@ namespace OGLPipeline
 
 		for (int i = 0; i < SIMPLE_SSAO_RANDOM_SAMPLE_NUM; i++)
 		{
-			m_simple_SSAO_random_positions[i] = Common::UniformGenerator::Generate(glm::vec3(0.0f), glm::vec3(1.0f));
+			m_simple_SSAO_random_positions.push_back(Common::UniformGenerator::Generate(glm::vec3(0.0f), glm::vec3(1.0f)));
 			m_simple_SSAO_random_positions[i].x = 2.0f * m_simple_SSAO_random_positions[i].x - 1.0f;
 			m_simple_SSAO_random_positions[i].y = 2.0f * m_simple_SSAO_random_positions[i].y - 1.0f;
 			m_simple_SSAO_random_positions[i] = glm::normalize(m_simple_SSAO_random_positions[i]);
@@ -668,15 +688,24 @@ namespace OGLPipeline
 
 	void DeferRenderer::RenderAO()
 	{
+		APP_RANGE_BEGIN("AO Pass");
 		m_AO_framebuffer->Bind();
 		AOGeneration();
 		AOFilter();
 		m_AO_framebuffer->UnBind();
 		RenderAOToScreen();
+		APP_RANGE_END();
 	}
 
 	void DeferRenderer::AOGeneration()
 	{
+		if (m_ao_method != AO_METHOD_NUM)
+		{
+			APP_RANGE_BEGIN("AO Generation Pass");
+		}
+
+		m_AO_framebuffer->ChangeTexture(m_AO_texture);
+
 		switch (m_ao_method)
 		{
 		case AO_METHOD_SSAO_SIMPLE:
@@ -693,7 +722,7 @@ namespace OGLPipeline
 			auto desc = m_AO_texture->get_description();
 			simple_SSAO_shader->EditUniform("AO_texture_size") = glm::uvec2(desc.width, desc.height);
 			
-			auto handle = simple_SSAO_shader->EditUniform("random_samples");
+			auto& handle = simple_SSAO_shader->EditUniform("random_samples");
 			for (int i = 0; i < SIMPLE_SSAO_RANDOM_SAMPLE_NUM; i++)
 			{
 				handle[i] = m_simple_SSAO_random_positions[i];
@@ -729,15 +758,35 @@ namespace OGLPipeline
 			break;
 		}
 		}
+
+		if (m_ao_method != AO_METHOD_NUM)
+		{
+			APP_RANGE_END();
+		}
 	}
 
 	void DeferRenderer::AOFilter()
 	{
+		if (m_ao_method != AO_METHOD_NUM)
+		{
+			APP_RANGE_BEGIN("AO Filter Pass");
+		}
+
+		m_AO_framebuffer->ChangeTexture(m_AO_filtered_texture);
+
 		switch (m_ao_method)
 		{
 		case AO_METHOD_SSAO_SIMPLE:
 		{
+			auto shader = Bind::ShaderProgram::Resolve("simple_SSAO_filter_shader", { 0,0 });
+			shader->Bind();
+			m_AO_texture->Bind();
 
+			Common::RenderHelper::RenderSimpleQuad();
+
+			shader->UnBind();
+			m_AO_texture->UnBind();
+			break;
 		}
 		case AO_METHOD_SSAO_UE:
 		{
@@ -755,6 +804,11 @@ namespace OGLPipeline
 		{
 			break;
 		}
+		}
+
+		if (m_ao_method != AO_METHOD_NUM)
+		{
+			APP_RANGE_END();
 		}
 	}
 
@@ -855,6 +909,16 @@ namespace OGLPipeline
 		m_rt_position_anisotrophy->Bind();
 		m_rt_albedo_specular->Bind();
 		m_rt_normal_metallic_roughness->Bind();
+		std::shared_ptr<Bind::ImageTexture2D> ao_input;
+		if (m_ao_method != AO_METHOD_NUM)
+		{
+			ao_input = m_AO_filtered_texture;
+		}
+		else
+		{
+			ao_input = m_default_white_texture;
+		}
+		ao_input->Bind();
 
 		m_light_buffer->Bind();
 
@@ -864,6 +928,7 @@ namespace OGLPipeline
 		m_rt_position_anisotrophy->UnBind();
 		m_rt_albedo_specular->UnBind();
 		m_rt_normal_metallic_roughness->UnBind();
+		ao_input->UnBind();
 		defer_lighting_shader->UnBind();
 		m_defer_lighting_framebuffer->UnBind();
 

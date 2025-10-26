@@ -17,6 +17,7 @@ layout (location = 0) in vec2 texCoord;
 layout (binding = 0) uniform sampler2D position_anisotrophy_tex;
 layout (binding = 1) uniform sampler2D albedo_specular_tex;
 layout (binding = 2) uniform sampler2D normal_metallic_roughness_tex;
+layout (binding = 3) uniform sampler2D ao_texture;
 
 uniform vec3 cameraPos;
 
@@ -58,8 +59,8 @@ void PrepareSurfaceData(inout SurfaceData data)
 
     vec4 normal_metallic_roughness = texture(normal_metallic_roughness_tex, texCoord);
     data.metallic = normal_metallic_roughness.z;
-    data.roughness = normal_metallic_roughness.a;
-    data.normal = vec3(normal_metallic_roughness.xy, sqrt(1.0 - dot(normal_metallic_roughness.xy, normal_metallic_roughness.xy)));
+    data.roughness = abs(normal_metallic_roughness.a);
+    data.normal = vec3(normal_metallic_roughness.xy, sign(normal_metallic_roughness.a) * sqrt(1.0 - dot(normal_metallic_roughness.xy, normal_metallic_roughness.xy)));
 
     return;
 }
@@ -195,6 +196,7 @@ void main()
     }
 
     vec3 ambient = vec3(0.03) * surfaceData.albedo;
+    float ao = texture(ao_texture, texCoord).r;
 
-    FragColor = vec4(ambient + result, 1.0);
+    FragColor = vec4((ambient + result) * ao, 1.0);
 }

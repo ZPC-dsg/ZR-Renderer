@@ -24,7 +24,7 @@ uniform float bias;
 
 vec3 DecodePositionFromDepth(vec2 tex)
 {
-    float depth = texture(depth_texture, texCoord).r;
+    float depth = texture(depth_texture, tex).r;
     depth = 2.0 * depth - 1.0;
     vec2 xy = 2.0 * tex - 1.0;
     
@@ -40,9 +40,9 @@ vec3 DecodePositionFromDepth(vec2 tex)
 
 vec3 DecodeNormal(vec2 tex)
 {
-    vec2 norm = texture(normal_texture, tex).rg;
+    vec2 norm = 2.0 * texture(normal_texture, tex).rg - 1.0;
     float z = sqrt(1.0 - dot(norm, norm));
-    return vec3(view * vec4(normalize(vec3(norm, z)), 1.0));
+    return vec3(view * vec4(normalize(vec3(norm, z)), 0.0));
 }
 
 vec2 DecodeRandom(vec2 tex)
@@ -72,6 +72,7 @@ void main()
         float range_check = smoothstep(0.0, 1.0, kernel_radius / abs(scene_depth - sample_pos.z));
         occlusion += (scene_depth >= sample_pos.z + bias ? 1.0 : 0.0) * range_check;
     }
+    occlusion /= float(RANDOM_SAMPLE_NUM);
 
     occlusion = 1.0 - occlusion;
     FragColor = vec4(vec3(occlusion), 1.0);

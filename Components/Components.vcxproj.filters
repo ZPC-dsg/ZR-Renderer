@@ -303,6 +303,9 @@
     <ClInclude Include="Common\light_common.h">
       <Filter>Common\头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Common\math_const.h">
+      <Filter>Common\头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="storageimage.cpp">
