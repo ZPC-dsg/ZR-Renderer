@@ -15,6 +15,13 @@
 #define DEFER_DISPLAY_MODE_PBR_LIGHTING   10
 #define DEFER_DISPLAY_MODE_NUM            11
 
+#define AO_METHOD_SSAO_SIMPLE  0
+#define AO_METHOD_SSAO_UE      1
+#define AO_METHOD_SSDO         2
+#define AO_METHOD_HBAO         3
+#define AO_METHOD_GTAO         4
+#define AO_METHOD_NUM          5
+
 #include <utils.h>
 #include <Common/light_common.h>
 
@@ -42,6 +49,13 @@ namespace OGLPipeline
 	{
 		friend class PostProcessor;
 
+		struct AOParamBlock
+		{
+			// Simple SSAO
+			float simple_SSAO_kernel_radius = 0.5f;
+			float simple_SSAO_bias = 0.025f;
+		};
+
 	public:
 		DeferRenderer(const std::string& scene_name, const std::string ui_name = "DeferOptions");
 		~DeferRenderer() = default;
@@ -53,16 +67,28 @@ namespace OGLPipeline
 
 	private:
 		void PrepareScene();
-		void PrepareDeferBuffers();
+		void PrepareDefaultTextures();
 		void PrepareSamplers();
+
+		void PrepareDeferBuffers();
 		void PrepareDeferLighting();
 		void PrepareLightBuffer();
 
+		void PrepareAO();
+		void GenerateSSAORandomTexture();
+		void GenerateSimpleSSAORandomPos();
+
 		void PrepareLightUI();
+		void PrepareAOUI();
 
 		void RenderDefer();
 		void DisplayDefer();
 		void DeferLighting();
+
+		void RenderAO();
+		void AOGeneration();
+		void AOFilter();
+		void RenderAOToScreen();
 
 	private:
 		size_t m_scene_index = 0; // 默认渲染Sponza
@@ -70,8 +96,12 @@ namespace OGLPipeline
 
 		std::string m_ui_name;
 
+		AOParamBlock m_ao_extra_block;
+
 		uint16_t m_defer_display_mode = DEFER_DISPLAY_MODE_NUM;
 		bool m_show_light_window = false;
+		uint16_t m_ao_method = AO_METHOD_SSAO_SIMPLE;
+		bool m_should_display_ao = false;
 
 	private:
 		// 场景唯一方向光
@@ -90,12 +120,20 @@ namespace OGLPipeline
 		std::shared_ptr<Bind::ImageTexture2D> m_rt_albedo_specular;
 		std::shared_ptr<Bind::ImageTexture2D> m_rt_depthbuffer;
 
+		std::shared_ptr<Bind::RenderTarget> m_AO_framebuffer;
+		std::shared_ptr<Bind::ImageTexture2D> m_AO_texture;
+		std::shared_ptr<Bind::ImageTexture2D> m_AO_filtered_texture;
+		std::shared_ptr<Bind::ImageTexture2D> m_SSAO_random_texture;
+		std::vector<glm::vec3> m_simple_SSAO_random_positions;
+
 		std::shared_ptr<Bind::RenderTarget> m_defer_lighting_framebuffer;
 		std::shared_ptr<Bind::ImageTexture2D> m_lighting_texture;
 
 		std::shared_ptr<Bind::Sampler> m_point_sampler;
 		std::shared_ptr<Bind::Sampler> m_bilinear_sampler;
 		std::shared_ptr<Bind::Sampler> m_trilinear_sampler;
+
+		std::shared_ptr<Bind::ImageTexture2D> m_default_white_texture;
 
 		std::vector<std::shared_ptr<SceneGraph::ModelProxy>> m_scenes;
 	};

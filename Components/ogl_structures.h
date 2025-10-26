@@ -110,9 +110,9 @@ struct OGL_TEXTURE_PARAMETER {
 	GLenum min_filter = GL_LINEAR;
 	GLenum mag_filter = GL_LINEAR;
 
-	GLenum wrap_x = GL_REPEAT;
-	GLenum wrap_y = GL_REPEAT;
-	GLenum wrap_z = GL_REPEAT;
+	GLenum wrap_x = GL_CLAMP_TO_EDGE;
+	GLenum wrap_y = GL_CLAMP_TO_EDGE;
+	GLenum wrap_z = GL_CLAMP_TO_EDGE;
 
 	std::optional<glm::vec4> border_color;
 

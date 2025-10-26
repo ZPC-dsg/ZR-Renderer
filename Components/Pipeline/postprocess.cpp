@@ -129,6 +129,7 @@ namespace OGLPipeline
 			if (downsample_level || filter_level)
 			{
 				m_renderer->m_defer_display_mode = DEFER_DISPLAY_MODE_NUM;
+				m_renderer->m_should_display_ao = false;
 			}
 
 			if (ImGui::CollapsingHeader("Bloom Kernel Sizes(Percentage)", false))
@@ -190,6 +191,11 @@ namespace OGLPipeline
 			m_bloom_downsample_chain[i]->DestroyAndCreateNew(desc);
 			m_bloom_horizon_filter_chain[i]->DestroyAndCreateNew(desc);
 		}
+	}
+
+	bool PostProcessor::ShouldDisplayBloom()
+	{
+		return m_gui_block.bloom_downsample_display_level > 0 || m_gui_block.bloom_filter_display_level > 0;
 	}
 
 	void PostProcessor::PrepareAA()

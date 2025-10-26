@@ -66,6 +66,8 @@ namespace OGLPipeline
 		void Accept(DeferRenderer* renderer);
 
 		void OnResize();
+
+		bool ShouldDisplayBloom();
 		
 	private:
 		void PrepareUI();

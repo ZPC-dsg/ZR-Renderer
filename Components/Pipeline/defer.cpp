@@ -6,7 +6,11 @@
 #include <Bindables/constantbuffer.h>
 #include <Bindables/Sampler.h>
 #include <Common/render_helper.h>
+#include <Common/math_const.h>
+#include <Common/random_generator.h>
 #include <assimploader.h>
+
+#define SIMPLE_SSAO_RANDOM_SAMPLE_NUM 64
 
 namespace OGLPipeline
 {
@@ -25,6 +29,7 @@ namespace OGLPipeline
 	void DeferRenderer::render()
 	{
 		RenderDefer();
+		RenderAO();
 		DeferLighting();
 		g_post_processor.MainProcessor();
 		DisplayDefer();
@@ -40,6 +45,7 @@ namespace OGLPipeline
 		PrepareSamplers();
 		PrepareDeferLighting();
 		PrepareLightBuffer();
+		PrepareAO();
 
 		g_post_processor.PreparePostProcess();
 	}
@@ -55,6 +61,10 @@ namespace OGLPipeline
 		// Defer RenderTargets Display
 		if (ImGui::CollapsingHeader("Defer Display Mode", false))
 		{
+			if (m_should_display_ao || g_post_processor.ShouldDisplayBloom())
+			{
+				ImGui::BeginDisabled();
+			}
 			ImGui::PushID(1); // 作用域1，防止发生按钮名称冲突
 			ImGui::Indent();
 			int display_mode = static_cast<int>(m_defer_display_mode);
@@ -73,7 +83,13 @@ namespace OGLPipeline
 			m_defer_display_mode = static_cast<uint16_t>(display_mode);
 			ImGui::Unindent();
 			ImGui::PopID();
+			if (m_should_display_ao || g_post_processor.ShouldDisplayBloom())
+			{
+				ImGui::EndDisabled();
+			}
 		}
+
+		PrepareAOUI();
 
 		g_post_processor.PrepareUI();
 
@@ -99,6 +115,11 @@ namespace OGLPipeline
 		params.min_filter = GL_LINEAR;
 		params.mag_filter = GL_LINEAR;
 		m_lighting_texture->UpdateNewResource(m_defer_lighting_framebuffer->get_render_target(0), params);
+
+		m_AO_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height);
+		m_AO_texture->UpdateNewResource(m_AO_framebuffer->get_render_target(0), params);
+
+		PrepareDefaultTextures();
 
 		g_post_processor.OnResize();
 	}
@@ -166,6 +187,20 @@ namespace OGLPipeline
 		m_point_sampler = Bind::Sampler::Resolve("point_sampler", 2, param);
 	}
 
+	void DeferRenderer::PrepareDefaultTextures()
+	{
+		OGL_TEXTURE2D_DESC desc;
+		desc.target = GL_TEXTURE_2D;
+		desc.width = globalSettings::screen_width;
+		desc.height = globalSettings::screen_height;
+		desc.internal_format = GL_R8;
+		desc.cpu_format = GL_RED;
+		desc.data_type = GL_UNSIGNED_BYTE;
+
+		std::vector<uint8_t> data(globalSettings::screen_width * globalSettings::screen_height, 255);
+		m_default_white_texture = Bind::ImageTexture2D::Resolve("default_white", desc, {}, 0, (void*)data.data());
+	}
+
 	void DeferRenderer::PrepareDeferLighting()
 	{
 		m_defer_lighting_framebuffer = Bind::RenderTarget::Resolve("defer_lighting_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
@@ -205,6 +240,97 @@ namespace OGLPipeline
 		m_light_buffer->UnBind();
 
 		m_available_indexes = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+	}
+
+	void DeferRenderer::PrepareAO()
+	{
+		m_AO_framebuffer = Bind::RenderTarget::Resolve("AO_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
+		m_AO_framebuffer->AppendTexture<GL_TEXTURE_2D>("AO_texture", {}, 1, 1, GL_R16F);
+		m_AO_texture = m_AO_framebuffer->get_texture_image<Bind::ImageTexture2D>("AO_image", 0, {}, 0);
+
+		// SSAO
+		GenerateSSAORandomTexture();
+		GenerateSimpleSSAORandomPos();
+		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "simple_SSAO_vertex", "Common", "defer_shading.vert");
+		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "simple_SSAO_fragment", "AO", "SSAO_simple.frag");
+		auto SSAO_simple_shader = Bind::ShaderProgram::Resolve("simple_SSAO_shader", { vertex,fragment });
+	}
+
+	void DeferRenderer::GenerateSSAORandomTexture()
+	{
+		const float angle_off1 = 127;
+		const float angle_off2 = 198;
+		const float angle_off3 = 23;
+
+		std::vector<uint8_t> bases(32);
+
+		auto Quantize8SignedByte = [](float f)->uint8_t
+			{
+				float uf = f * 2.0f + 1.0f;
+				int i = (int)(uf * 255.0f + 0.5f);
+				return (uint8_t)i;
+			};
+
+		for (int pos = 0; pos < 16; ++pos)
+		{
+			// distribute rotations over 4x4 pattern
+			int reorder[16] = { 0, 11, 7, 3, 10, 4, 15, 12, 6, 8, 1, 14, 13, 2, 9, 5 };
+			int w = reorder[pos];
+
+			// ordered sampling of the rotation basis (*2 is missing as we use mirrored samples)
+			float ww = w / 16.0f * PI;
+
+			// randomize base scale
+			float lenm = 1.0f - (std::sin(angle_off2 * w * 0.01f) * 0.5f + 0.5f) * angle_off3 * 0.01f;
+			float s = std::sin(ww) * lenm;
+			float c = std::cos(ww) * lenm;
+
+			bases[2 * pos] = Quantize8SignedByte(c);
+			bases[2 * pos + 1] = Quantize8SignedByte(s);
+		}
+
+		const unsigned int extent = 64;
+		const unsigned int block_size = 4 * 4 * 16;
+		const unsigned int row_size = extent * 16;
+		std::vector<uint8_t> real_data(extent * extent);
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				std::copy(bases.begin(), bases.begin() + 8, real_data.begin() + (i * 4 + j) * block_size);
+				std::copy(bases.begin() + 8, bases.begin() + 16, real_data.begin() + (i * 4 + j) * block_size + row_size);
+				std::copy(bases.begin() + 16, bases.begin() + 24, real_data.begin() + (i * 4 + j) * block_size + 2 * row_size);
+				std::copy(bases.begin() + 24, bases.end(), real_data.begin() + (i * 4 + j) * block_size + 3 * row_size);
+			}
+		}
+
+		OGL_TEXTURE2D_DESC desc;
+		desc.target = GL_TEXTURE_2D;
+		desc.width = extent;
+		desc.height = extent;
+		desc.internal_format = GL_RG8;
+		desc.cpu_format = GL_RG8;
+		OGL_TEXTURE_PARAMETER param;
+		param.wrap_x = GL_REPEAT;
+		param.wrap_y = GL_REPEAT;
+		m_SSAO_random_texture = Bind::ImageTexture2D::Resolve("SSAO_random_texture", desc, param, 1, (void*)real_data.data());
+	}
+
+	void DeferRenderer::GenerateSimpleSSAORandomPos()
+	{
+		m_simple_SSAO_random_positions.reserve(SIMPLE_SSAO_RANDOM_SAMPLE_NUM);
+
+		for (int i = 0; i < SIMPLE_SSAO_RANDOM_SAMPLE_NUM; i++)
+		{
+			m_simple_SSAO_random_positions[i] = Common::UniformGenerator::Generate(glm::vec3(0.0f), glm::vec3(1.0f));
+			m_simple_SSAO_random_positions[i].x = 2.0f * m_simple_SSAO_random_positions[i].x - 1.0f;
+			m_simple_SSAO_random_positions[i].y = 2.0f * m_simple_SSAO_random_positions[i].y - 1.0f;
+			m_simple_SSAO_random_positions[i] = glm::normalize(m_simple_SSAO_random_positions[i]);
+
+			float scale = Common::UniformGenerator::Generate(0.0f, 1.0f);
+			scale *= std::pow(float(i) / (float)SIMPLE_SSAO_RANDOM_SAMPLE_NUM, 2.0f);
+			m_simple_SSAO_random_positions[i] *= scale;
+		}
 	}
 
 	void DeferRenderer::PrepareLightUI()
@@ -476,6 +602,53 @@ namespace OGLPipeline
 		}
 	}
 
+	void DeferRenderer::PrepareAOUI()
+	{
+		if (ImGui::CollapsingHeader("AO Method", false))
+		{
+			ImGui::PushID(5);
+			ImGui::Indent();
+			int ao_method = static_cast<int>(m_ao_method);
+			ImGui::RadioButton("Simple SSAO", &ao_method, AO_METHOD_SSAO_SIMPLE);
+			ImGui::RadioButton("UE SSAO", &ao_method, AO_METHOD_SSAO_UE);
+			ImGui::RadioButton("SSDO", &ao_method, AO_METHOD_SSDO);
+			ImGui::RadioButton("SSDO", &ao_method, AO_METHOD_HBAO);
+			ImGui::RadioButton("GTAO", &ao_method, AO_METHOD_GTAO);
+			ImGui::RadioButton("None", &ao_method, AO_METHOD_NUM);
+			m_ao_method = static_cast<uint16_t>(ao_method);
+			ImGui::Unindent();
+			ImGui::PopID();
+		}
+
+		if (g_post_processor.ShouldDisplayBloom())
+		{
+			ImGui::BeginDisabled();
+		}
+		ImGui::Checkbox("Display AO", &m_should_display_ao);
+		if (m_should_display_ao)
+		{
+			m_defer_display_mode = DEFER_DISPLAY_MODE_NUM;
+		}
+		if (g_post_processor.ShouldDisplayBloom())
+		{
+			ImGui::EndDisabled();
+		}
+
+		if (ImGui::CollapsingHeader("AO Extra Parameters", false))
+		{
+			if (m_ao_method == AO_METHOD_SSAO_SIMPLE)
+			{
+				ImGui::DragFloat("Simple SSAO Kernel Radius:", &m_ao_extra_block.simple_SSAO_kernel_radius, 0.01f, 0.1f, 1.0f);
+				ImGui::NewLine();
+				ImGui::DragFloat("Simple SSAO Bias:", &m_ao_extra_block.simple_SSAO_bias, 0.001f, 0.005f, 0.05f);
+			}
+			else
+			{
+				// TODO
+			}
+		}
+	}
+
 	void DeferRenderer::RenderDefer()
 	{
 		APP_RANGE_BEGIN("generate_defer");
@@ -491,6 +664,106 @@ namespace OGLPipeline
 		m_scenes[m_scene_index]->Render();
 
 		APP_RANGE_END();
+	}
+
+	void DeferRenderer::RenderAO()
+	{
+		m_AO_framebuffer->Bind();
+		AOGeneration();
+		AOFilter();
+		m_AO_framebuffer->UnBind();
+		RenderAOToScreen();
+	}
+
+	void DeferRenderer::AOGeneration()
+	{
+		switch (m_ao_method)
+		{
+		case AO_METHOD_SSAO_SIMPLE:
+		{
+			auto simple_SSAO_shader = Bind::ShaderProgram::Resolve("simple_SSAO_shader", { 0,0 });
+			simple_SSAO_shader->BindWithoutUpdate();
+
+			m_rt_depthbuffer->Bind();
+			m_rt_normal_metallic_roughness->Bind();
+			m_SSAO_random_texture->Bind();
+
+			simple_SSAO_shader->EditUniform("view") = globalSettings::mainCamera.get_view();
+			simple_SSAO_shader->EditUniform("projection") = globalSettings::mainCamera.get_perspective();
+			auto desc = m_AO_texture->get_description();
+			simple_SSAO_shader->EditUniform("AO_texture_size") = glm::uvec2(desc.width, desc.height);
+			
+			auto handle = simple_SSAO_shader->EditUniform("random_samples");
+			for (int i = 0; i < SIMPLE_SSAO_RANDOM_SAMPLE_NUM; i++)
+			{
+				handle[i] = m_simple_SSAO_random_positions[i];
+			}
+
+			simple_SSAO_shader->EditUniform("kernel_radius") = m_ao_extra_block.simple_SSAO_kernel_radius;
+			simple_SSAO_shader->EditUniform("bias") = m_ao_extra_block.simple_SSAO_bias;
+
+			simple_SSAO_shader->UpdateOnly();
+
+			Common::RenderHelper::RenderSimpleQuad();
+
+			simple_SSAO_shader->UnBind();
+			m_rt_depthbuffer->UnBind();
+			m_rt_normal_metallic_roughness->UnBind();
+			m_SSAO_random_texture->UnBind();
+			break;
+		}
+		case AO_METHOD_SSAO_UE:
+		{
+
+		}
+		case AO_METHOD_HBAO:
+		{
+
+		}
+		case AO_METHOD_GTAO:
+		{
+
+		}
+		default:
+		{
+			break;
+		}
+		}
+	}
+
+	void DeferRenderer::AOFilter()
+	{
+		switch (m_ao_method)
+		{
+		case AO_METHOD_SSAO_SIMPLE:
+		{
+
+		}
+		case AO_METHOD_SSAO_UE:
+		{
+
+		}
+		case AO_METHOD_HBAO:
+		{
+
+		}
+		case AO_METHOD_GTAO:
+		{
+
+		}
+		default:
+		{
+			break;
+		}
+		}
+	}
+
+	void DeferRenderer::RenderAOToScreen()
+	{
+		if (m_should_display_ao)
+		{
+			Common::RenderHelper::RenderTextureToScreen(m_AO_filtered_texture, 8);
+		}
 	}
 
 	void DeferRenderer::DisplayDefer()
