@@ -19,12 +19,6 @@ namespace DrawItems {
 		m_renderfunctions[m_render_index](m_VAO);
 	}
 
-	void Drawable::DrawSimple(size_t index)
-	{
-		m_simpleVAOs[index]->Bind();
-		m_renderfunctions[m_render_index](m_simpleVAOs[index]);
-	}
-
 	//attribs已经按照location序排列好，并且要求attribs的location从0开始连续递增，instruction中元素和attribs一一对应
 	void Drawable::GenerateVAO(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<VertexType> instruction) {
 		if (!CheckAttribExists(instruction)) {

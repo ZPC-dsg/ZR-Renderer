@@ -16,6 +16,7 @@ namespace SceneGraph {
 
 	class DrawableProxy {
 		friend class DrawableLoader;
+		friend class Node;
 
 	public:
 		virtual ~DrawableProxy() = default;
@@ -72,8 +73,6 @@ namespace SceneGraph {
 		void ChangeRenderTarget(std::shared_ptr<Bind::RenderTarget> new_target);
 
 		void Render(bool clear_texture = true, bool clear_depth = true, bool clear_stencil = false);
-		// 仅使用一个位置为0的顶点属性以及一些指定的uniform或constant rule进行渲染，并且不绑定任何纹理
-		void RenderSimple(const std::string& main_shader_name, bool clear_texture = true, bool clear_depth = true, bool clear_stencil = false);
 		void Bind();//绑定根节点所有bindables避免在渲染的时候重复绑定
 
 	protected:
@@ -88,9 +87,15 @@ namespace SceneGraph {
 
 		Scene* m_scene;
 
+		std::vector<std::string> m_render_sets;
+		size_t current_set;
+
 	protected:
 		//保存所有的proxy，因为需要在程序运行中将这些proxy的引用传递给node，它们不能在中途离开作用域
 		std::vector<Dynamic::Dcb::UniformElementRef> m_uniform_refs;
 		std::vector<Dynamic::Dcb::ConstantElementRef> m_constant_refs;
+
+		// 场景下所有的bindable
+		std::vector<std::shared_ptr<Bind::Bindable>> m_bindables;
 	};
 }

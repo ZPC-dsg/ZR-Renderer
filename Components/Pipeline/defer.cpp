@@ -727,6 +727,11 @@ namespace OGLPipeline
 		APP_RANGE_END();
 	}
 
+	void DeferRenderer::RenderHiZ()
+	{
+
+	}
+
 	void DeferRenderer::RenderDefer()
 	{
 		APP_RANGE_BEGIN("Defer Generation Pass");

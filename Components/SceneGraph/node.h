@@ -79,6 +79,7 @@ namespace SceneGraph {
 	X(ConfigurationType::MaterialRoughness, float, m_roughness, UniConstRoughnessFunc)
 
 	class ControlNode;
+	class DrawableProxy;
 
 	class Node {
 	public:
@@ -138,6 +139,8 @@ namespace SceneGraph {
 		std::string m_name;
 
 		std::vector<std::unordered_map<std::type_index, std::vector<std::shared_ptr<Bind::Bindable>>>> m_bindables;
+		std::vector<std::vector<std::vector<size_t>>> m_bindable_sets;
+		DrawableProxy* m_proxy; // 当前node归属的proxy
 
 		Node* m_parent = nullptr;
 		std::vector<Node*> m_children;//不使用智能指针以避免循环引用

@@ -40,7 +40,6 @@ namespace DrawItems {
 		inline std::string GetName() const noexcept { return m_name; };
 
 		void Draw();
-		void DrawSimple(size_t index = 0);
 
 		void GenerateVAO(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<VertexType> instruction);
 

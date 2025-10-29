@@ -134,11 +134,6 @@ namespace SceneGraph {
 		m_root->UnBindAll();
 	}
 
-	void DrawableProxy::RenderSimple(const std::string& main_shader_name, bool clear_texture = true, bool clear_depth = true, bool clear_stencil = false)
-	{
-
-	}
-
 	void DrawableProxy::Bind() {
 		m_root->BindAll();
 	}
