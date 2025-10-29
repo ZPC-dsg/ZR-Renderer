@@ -72,6 +72,36 @@ namespace Bind {
 		glBindVertexArray(0);
 	}
 
+	// 要求顶点着色器中的顶点位置一定是0
+	InputLayout::InputLayout(const std::string& tag, std::shared_ptr<VertexBuffer> vert, const OGL_INPUT_ELEMENT_DESC& desc)
+		:m_tag(tag), m_vertex({ vert })
+	{
+		using namespace Dynamic::Dvtx;
+
+		glGenVertexArrays(1, &m_VAO);
+
+		const VertexLayout& layout = vert->get_layout();
+		VertexLayout::InputSteppingType st = layout.GetInputSteppingType();
+		GLsizei stride = st == VertexLayout::InputSteppingType::Interleaved ? layout.VertexSize() : 0;
+		if (desc.element_count == 1)
+		{
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 1, desc.element_type, GL_FALSE, stride, (void*)(desc.byteoffset));
+			glVertexAttribDivisor(0, 1);
+		}
+		else
+		{
+			GLsizei new_stride = st == VertexLayout::InputSteppingType::Interleaved ? stride : desc.element_column * desc.element_column * sizeof(float);
+			for (int i = 0; i < desc.element_column; i++) {
+				glEnableVertexAttribArray(i);
+				glVertexAttribPointer(i, desc.element_count, desc.element_type, GL_FALSE, new_stride, (void*)(desc.byteoffset + i * desc.element_column * sizeof(float)));
+				glVertexAttribDivisor(i, 1);
+			}
+		}
+		
+		glObjectLabel(GL_VERTEX_ARRAY, m_VAO, -1, m_tag.c_str());
+	}
+
 	void InputLayout::Bind() noxnd {
 		glBindVertexArray(m_VAO);
 	}
@@ -82,6 +112,11 @@ namespace Bind {
 
 	std::shared_ptr<InputLayout> InputLayout::Resolve(const std::string& tag, std::vector<std::shared_ptr<VertexBuffer>> vertex, std::vector<std::shared_ptr<VertexBuffer>> instance, std::shared_ptr<IndexBuffer> index) {
 		return BindableResolver::Resolve<InputLayout>(tag, vertex, instance, index);
+	}
+
+	std::shared_ptr<InputLayout> InputLayout::Resolve(const std::string& tag, std::shared_ptr<VertexBuffer> vert, const OGL_INPUT_ELEMENT_DESC& desc)
+	{
+		return BindableResolver::Resolve<InputLayout>(tag, vert, desc);
 	}
 
 	std::string InputLayout::GenerateUID(const std::string& tag, std::vector<std::shared_ptr<VertexBuffer>> vertex, std::vector<std::shared_ptr<VertexBuffer>> instance, std::shared_ptr<IndexBuffer> index) {
@@ -104,6 +139,13 @@ namespace Bind {
 		return uid;
 	}
 
+	std::string InputLayout::GenerateUID(const std::string& tag, std::shared_ptr<VertexBuffer> vert, const OGL_INPUT_ELEMENT_DESC& desc)
+	{
+		using namespace std::string_literals;
+
+		return typeid(InputLayout).name() + "#"s + tag + "#"s + vert->GetUID() + "__"s + "NoIndex"s;
+	}
+
 	std::string InputLayout::GetUID() const noexcept {
 		return GenerateUID(m_tag, m_vertex, m_instance, m_index);
 	}
@@ -124,5 +166,22 @@ namespace Bind {
 	unsigned int InputLayout::GetInstanceCount() const noxnd {
 		assert("No instance drawing is specified!" && m_instance.size());
 		return m_instance[0]->VertexCount();
+	}
+
+	std::shared_ptr<Bind::VertexBuffer> InputLayout::GetVertexBuffer(size_t index)
+	{
+		assert(index < m_vertex.size());
+		return m_vertex[index];
+	}
+
+	std::shared_ptr<Bind::VertexBuffer> InputLayout::GetInstanceBuffer(size_t index)
+	{
+		assert(index < m_instance.size());
+		return m_instance[index];
+	}
+
+	std::shared_ptr<Bind::IndexBuffer> InputLayout::GetIndexBuffer()
+	{
+		return m_index;
 	}
 }

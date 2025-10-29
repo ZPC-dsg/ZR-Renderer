@@ -70,6 +70,9 @@ namespace OGLPipeline
 		void PrepareDefaultTextures();
 		void PrepareSamplers();
 
+		void PreparePreZ();
+		void PrepareHiZ();
+
 		void PrepareDeferBuffers();
 		void PrepareDeferLighting();
 		void PrepareLightBuffer();
@@ -80,6 +83,9 @@ namespace OGLPipeline
 
 		void PrepareLightUI();
 		void PrepareAOUI();
+
+		void RenderPreZ();
+		void RenderHiZ();
 
 		void RenderDefer();
 		void DisplayDefer();
@@ -114,11 +120,16 @@ namespace OGLPipeline
 		std::shared_ptr<Bind::ConstantBuffer> m_light_buffer;
 
 	private:
+		std::shared_ptr<Bind::RenderTarget> m_prez_framebuffer;
+		std::shared_ptr<Bind::ImageTexture2D> m_rt_depthbuffer;
+
+		std::shared_ptr<Bind::RenderTarget> m_hiz_framebuffer;
+		std::shared_ptr<Bind::ImageTexture2D> m_hiz_texture;
+
 		std::shared_ptr<Bind::RenderTarget> m_defer_framebuffer;
 		std::shared_ptr<Bind::ImageTexture2D> m_rt_position_anisotrophy;
 		std::shared_ptr<Bind::ImageTexture2D> m_rt_normal_metallic_roughness;
 		std::shared_ptr<Bind::ImageTexture2D> m_rt_albedo_specular;
-		std::shared_ptr<Bind::ImageTexture2D> m_rt_depthbuffer;
 
 		std::shared_ptr<Bind::RenderTarget> m_AO_framebuffer;
 		std::shared_ptr<Bind::ImageTexture2D> m_AO_texture;

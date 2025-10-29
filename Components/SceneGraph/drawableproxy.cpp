@@ -93,6 +93,11 @@ namespace SceneGraph {
 		m_scene->AddNode(std::move(control));
 	}
 
+	void DrawableProxy::ChangeRenderTarget(std::shared_ptr<Bind::RenderTarget> new_target)
+	{
+		m_root->SetBindableUnique(new_target);
+	}
+
 	void DrawableProxy::Cook() {
 		//必须要有一个shader
 		if (!m_root->HasShader()) {
@@ -127,6 +132,11 @@ namespace SceneGraph {
 
 		m_root->StartRender();
 		m_root->UnBindAll();
+	}
+
+	void DrawableProxy::RenderSimple(const std::string& main_shader_name, bool clear_texture = true, bool clear_depth = true, bool clear_stencil = false)
+	{
+
 	}
 
 	void DrawableProxy::Bind() {

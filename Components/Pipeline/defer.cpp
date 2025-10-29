@@ -17,6 +17,7 @@ namespace OGLPipeline
 	const char* DeferRenderer::scene_names[] =
 	{
 		"Sponza",
+		"Feiji Cup",
 	};
 
 	DeferRenderer::DeferRenderer(const std::string& scene_name, const std::string ui_name)
@@ -28,6 +29,8 @@ namespace OGLPipeline
 
 	void DeferRenderer::render()
 	{
+		RenderPreZ();
+		RenderHiZ();
 		RenderDefer();
 		RenderAO();
 		if (!m_should_display_ao)
@@ -43,6 +46,8 @@ namespace OGLPipeline
 	{
 		g_post_processor.Accept(this);
 
+		PreparePreZ();
+		PrepareHiZ();
 		PrepareDeferBuffers();
 		PrepareScene();
 		PrepareSamplers();
@@ -59,6 +64,11 @@ namespace OGLPipeline
 
 		int current_scene = static_cast<int>(m_scene_index);
 		ImGui::Combo("Scene List", &current_scene, scene_names, IM_ARRAYSIZE(scene_names));
+		if (current_scene != m_scene_index)
+		{
+			globalSettings::mainCamera.set_perspective(60.0f, globalSettings::screen_width, globalSettings::screen_height, 0.1f, 512.0f);
+			globalSettings::mainCamera.set_position(glm::vec3(0.0f, 0.0f, 4.0f));
+		}
 		m_scene_index = current_scene;
 
 		// Defer RenderTargets Display
@@ -103,10 +113,11 @@ namespace OGLPipeline
 
 	void DeferRenderer::resize()
 	{
+		m_prez_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height);
+		m_rt_depthbuffer->UpdateNewResource(m_defer_framebuffer->get_depth_stencil(), m_rt_depthbuffer->get_parameter());
+
 		m_defer_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height);
 		OGL_TEXTURE_PARAMETER params;
-		params.wrap_x = GL_CLAMP_TO_EDGE;
-		params.wrap_y = GL_CLAMP_TO_EDGE;
 		m_rt_albedo_specular->UpdateNewResource(m_defer_framebuffer->get_render_target(1), params);
 		params.min_filter = GL_NEAREST;
 		params.mag_filter = GL_NEAREST;
@@ -157,6 +168,22 @@ namespace OGLPipeline
 		m_scenes[0]->ScaleModel(glm::vec3(0.2f));
 
 		m_scenes[0]->Cook();
+
+		// Feiji Cup
+		m_scenes.push_back(AssimpLoader::LoadModel("FeijiCup", "Cup_Handle.obj", m_main_scene));
+		m_scenes[1]->AddRootBindable(m_defer_framebuffer);
+		m_scenes[1]->AddRootBindable(defer_shader);
+		m_scenes[1]->AddRootUniformRule<SceneGraph::ConfigurationType::Transformation>(defer_shader->EditUniform("model").GetLeafUniform(),
+			[](glm::mat4 model)->glm::mat4 {return model; })
+			.AddRootUniformRule<SceneGraph::ConfigurationType::MaterialMetallic>(defer_shader->EditUniform("metallic").GetLeafUniform(),
+				[](float metallic)->float {return metallic; })
+			.AddRootUniformRule<SceneGraph::ConfigurationType::MaterialRoughness>(defer_shader->EditUniform("roughness").GetLeafUniform(),
+				[](float roughness)->float {return roughness; });
+		m_scenes[1]->AddRootVertexRule(instruction);
+		m_scenes[1]->AddRootTextureRule("diffuse_tex", 0, SceneGraph::Material::TextureCategory::DIFFUSE).
+			AddRootTextureRule("specular_tex", 1, SceneGraph::Material::TextureCategory::SPECULAR).
+			AddRootTextureRule("normal_tex", 2, SceneGraph::Material::TextureCategory::NORMAL);
+		m_scenes[1]->Cook();
 	}
 
 	void DeferRenderer::PrepareDeferBuffers()
@@ -168,8 +195,6 @@ namespace OGLPipeline
 			.AppendDepthComponent<GL_TEXTURE_2D>("rt_depth", 1, GL_DEPTH_COMPONENT32F).CheckCompleteness();
 
 		OGL_TEXTURE_PARAMETER params;
-		params.wrap_x = GL_CLAMP_TO_EDGE;
-		params.wrap_y = GL_CLAMP_TO_EDGE;
 		m_rt_albedo_specular = m_defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("albe_spec_texture", "rt_albedo_specular", params, 1);
 		params.min_filter = GL_NEAREST;
 		params.mag_filter = GL_NEAREST;
@@ -247,6 +272,25 @@ namespace OGLPipeline
 		m_light_buffer->UnBind();
 
 		m_available_indexes = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+	}
+
+	void DeferRenderer::PreparePreZ()
+	{
+		m_prez_framebuffer = Bind::RenderTarget::Resolve("prez_framebuffer", globalSettings::screen_width, globalSettings::screen_height);
+		m_prez_framebuffer->AppendDepthComponent<GL_TEXTURE_2D>("rt_depth", 1, GL_DEPTH_COMPONENT32F).CheckCompleteness();
+		OGL_TEXTURE_PARAMETER params;
+		params.min_filter = GL_NEAREST;
+		params.mag_filter = GL_NEAREST;
+		m_rt_depthbuffer = m_prez_framebuffer->get_texture_depthstencil<Bind::ImageTexture2D>("depth_tex", params, 0);
+
+		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "prez_vertex", "Common", "defer_shading.vert");
+		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "prez_fragment", "Common", "empty.frag");
+		auto prez_shader = Bind::ShaderProgram::Resolve("prez_shader", { vertex,fragment });
+	}
+
+	void DeferRenderer::PrepareHiZ()
+	{
+
 	}
 
 	void DeferRenderer::PrepareAO()
@@ -398,7 +442,7 @@ namespace OGLPipeline
 				}
 
 				bool update_intensity = false;
-				should_update |= update_intensity = ImGui::DragFloat("Intensity", &m_main_light.m_intensity, 0.1f, 0.0f, 10.0f);
+				should_update |= update_intensity = ImGui::DragFloat("Intensity", &m_main_light.m_intensity, 0.1f, 0.0f, 100.0f);
 				if (update_intensity)
 				{
 					ref["intensity"s] = m_main_light.m_intensity;
@@ -669,9 +713,23 @@ namespace OGLPipeline
 		}
 	}
 
+	void DeferRenderer::RenderPreZ()
+	{
+		APP_RANGE_BEGIN("PreZ Pass");
+
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LEQUAL);
+		glEnable(GL_CULL_FACE);
+
+
+
+		APP_RANGE_END();
+	}
+
 	void DeferRenderer::RenderDefer()
 	{
-		APP_RANGE_BEGIN("generate_defer");
+		APP_RANGE_BEGIN("Defer Generation Pass");
 
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);

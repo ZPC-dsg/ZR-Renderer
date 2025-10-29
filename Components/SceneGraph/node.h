@@ -379,5 +379,6 @@ namespace SceneGraph {
 		std::unordered_map<ConfigurationType, std::vector<std::shared_ptr<UniConstFuncBase<Dynamic::Dcb::ConstantElementRef>>>> m_constant_functions;
 		std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>> m_texture_vector;
 		std::vector<DrawItems::VertexType> m_vertex_instruction;
+		std::vector<std::string> m_simple_vertex_instruction;
 	};
 }

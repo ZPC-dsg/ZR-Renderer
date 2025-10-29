@@ -1,6 +1,7 @@
 #define DVTX_SOURCE_FILE
 
 #include <Dynamic/dynamic_vertex.h>
+#include <logging.h>
 
 namespace Dynamic {
 	namespace Dvtx {
@@ -55,6 +56,20 @@ namespace Dynamic {
 				desc.push_back(e.GetDesc());
 			}
 			return desc;
+		}
+
+		OGL_INPUT_ELEMENT_DESC VertexLayout::GetOGLLayout(const std::string& vert_shader_name) const noxnd
+		{
+			for (auto e : m_elements)
+			{
+				if (e.GetName() == vert_shader_name)
+				{
+					return e.GetDesc();
+				}
+			}
+
+			LOGE("Vertex attribute named {} does not exist!", vert_shader_name.c_str());
+			assert(false);
 		}
 
 		std::string VertexLayout::GetCode() const noxnd

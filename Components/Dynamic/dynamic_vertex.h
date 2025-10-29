@@ -107,6 +107,7 @@ namespace Dynamic {
 			size_t VertexSize() const noxnd;
 			inline size_t GetElementCount() const noexcept { return m_elements.size(); }
 			std::vector<OGL_INPUT_ELEMENT_DESC> GetOGLLayout() const noxnd;
+			OGL_INPUT_ELEMENT_DESC GetOGLLayout(const std::string& vert_shader_name) const noxnd;
 			std::string GetCode() const noxnd;
 			bool Has(GLenum type, std::string name) const noexcept;
 

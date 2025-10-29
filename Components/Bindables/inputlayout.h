@@ -7,13 +7,16 @@ namespace Bind {
 	class InputLayout :public Bindable {
 	public:
 		InputLayout(const std::string& tag, std::vector<std::shared_ptr<VertexBuffer>> vertex, std::vector<std::shared_ptr<VertexBuffer>> instance = {}, std::shared_ptr<IndexBuffer> index = nullptr);
+		InputLayout(const std::string& tag, std::shared_ptr<VertexBuffer> vert, const OGL_INPUT_ELEMENT_DESC& desc);
 		~InputLayout() = default;
 
 		void Bind() noxnd override;
 		void UnBind() noxnd override;
 
 		static std::shared_ptr<InputLayout> Resolve(const std::string& tag, std::vector<std::shared_ptr<VertexBuffer>> vertex, std::vector<std::shared_ptr<VertexBuffer>> instance = {}, std::shared_ptr<IndexBuffer> index = nullptr);
+		static std::shared_ptr<InputLayout> Resolve(const std::string& tag, std::shared_ptr<VertexBuffer> vert, const OGL_INPUT_ELEMENT_DESC& desc);
 		static std::string GenerateUID(const std::string& tag, std::vector<std::shared_ptr<VertexBuffer>> vertex, std::vector<std::shared_ptr<VertexBuffer>> instance = {}, std::shared_ptr<IndexBuffer> index = nullptr);
+		static std::string GenerateUID(const std::string& tag, std::shared_ptr<VertexBuffer> vert, const OGL_INPUT_ELEMENT_DESC& desc);
 		std::string GetUID() const noexcept override;
 
 		std::type_index GetTypeInfo() const noexcept override;
@@ -22,6 +25,10 @@ namespace Bind {
 		inline bool IsInstanceDraw() const noexcept { return m_instance.size(); };
 		unsigned int GetVertexCount() const noexcept;//至少存在一个pervertex的vertexbuffer
 		unsigned int GetInstanceCount() const noxnd;
+
+		std::shared_ptr<Bind::VertexBuffer> GetVertexBuffer(size_t index = 0);
+		std::shared_ptr<Bind::VertexBuffer> GetInstanceBuffer(size_t index = 0);
+		std::shared_ptr<Bind::IndexBuffer> GetIndexBuffer();
 
 	private:
 		void bind_impl() noxnd;

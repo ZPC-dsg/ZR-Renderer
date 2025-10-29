@@ -6,6 +6,7 @@
 
 namespace Bind {
 	class Bindable;
+	class RenderTarget;
 }
 
 class DrawableLoader;
@@ -39,6 +40,7 @@ namespace SceneGraph {
 			m_root->RegisterConstant<Type>(m_constant_refs.back(), f, std::forward<Args>(args)...);
 			return *this;
 		}
+
 		DrawableProxy& AddControlTextureRule(const std::string& name, const std::string& shader_name, unsigned int binding, Material::TextureCategory type);
 		DrawableProxy& AddControlVertexRule(const std::string& name, std::vector<DrawItems::VertexType> instruction);
 		template <ConfigurationType Type, typename Func, typename... Args>
@@ -67,8 +69,11 @@ namespace SceneGraph {
 		virtual void Cook();
 
 		void AddControlNode(const std::string& name, const std::string& father_name);
+		void ChangeRenderTarget(std::shared_ptr<Bind::RenderTarget> new_target);
 
 		void Render(bool clear_texture = true, bool clear_depth = true, bool clear_stencil = false);
+		// 仅使用一个位置为0的顶点属性以及一些指定的uniform或constant rule进行渲染，并且不绑定任何纹理
+		void RenderSimple(const std::string& main_shader_name, bool clear_texture = true, bool clear_depth = true, bool clear_stencil = false);
 		void Bind();//绑定根节点所有bindables避免在渲染的时候重复绑定
 
 	protected:
