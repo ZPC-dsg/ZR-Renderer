@@ -27,6 +27,8 @@ namespace SceneGraph {
 	}
 
 	void Node::SetBindable(size_t bindable_index, size_t index) {
+		m_bindable_sets.resize(m_proxy->m_render_sets.size());
+
 		if (m_bindable_sets[m_proxy->m_current_set].size() == 0)
 		{
 			m_bindable_sets[m_proxy->m_current_set].resize(this->GetDrawableCount());
@@ -312,7 +314,8 @@ namespace SceneGraph {
 	}
 
 	void ControlNode::AddVertexConfig(std::vector<DrawItems::VertexType> instruction) {
-		m_vertex_instruction = instruction;
+		m_vertex_instruction.resize(m_proxy->m_render_sets.size());
+		m_vertex_instruction[m_proxy->m_current_set] = instruction;
 	}
 
 	void ControlNode::StartCooking(const std::string& rel_path) {
@@ -347,7 +350,7 @@ namespace SceneGraph {
 		}
 
 		for (Node* child : m_children) {
-			child->CookNode(attribs, m_vertex_instruction, m_texture_vector, rel_path);
+			child->CookNode(attribs, m_vertex_instruction[m_proxy->m_current_set], m_texture_vector, rel_path);
 		}
 
 		shader->BindWithoutUpdate();
@@ -424,5 +427,10 @@ namespace SceneGraph {
 				std::static_pointer_cast<Bind::ConstantBuffer>(b)->Update();
 			}
 		}
+	}
+
+	void ControlNode::ClearVertexConfig()
+	{
+		m_vertex_instruction = {};
 	}
 }

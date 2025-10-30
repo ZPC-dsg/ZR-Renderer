@@ -39,14 +39,14 @@ namespace DrawItems {
 		inline void SetName(const std::string& name) noexcept { m_name = name; };
 		inline std::string GetName() const noexcept { return m_name; };
 
-		void Draw();
+		void Draw(size_t index = 0);
 
 		void GenerateVAO(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<VertexType> instruction);
 
 	protected:
 		std::string m_name;
 
-		std::shared_ptr<Bind::InputLayout> m_VAO;
+		std::vector<std::shared_ptr<Bind::InputLayout>> m_VAOs;
 		size_t m_render_index = 0;//使用哪个渲染函数
 
 		static std::vector<std::function<void(std::shared_ptr<Bind::InputLayout>)>> m_renderfunctions;

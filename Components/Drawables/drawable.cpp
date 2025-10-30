@@ -14,9 +14,9 @@ namespace DrawItems {
 		DrawDefault,DrawIndexed,DrawInstanced,DrawIndexedInstanced
 	};
 
-	void Drawable::Draw() {
-		m_VAO->Bind();
-		m_renderfunctions[m_render_index](m_VAO);
+	void Drawable::Draw(size_t index = 0) {
+		m_VAOs[index]->Bind();
+		m_renderfunctions[m_render_index](m_VAOs[index]);
 	}
 
 	//attribs已经按照location序排列好，并且要求attribs的location从0开始连续递增，instruction中元素和attribs一一对应
@@ -86,10 +86,10 @@ namespace DrawItems {
 		std::shared_ptr<Bind::IndexBuffer> ind_buffer = nullptr;
 		if(m_indices.size())
 			ind_buffer = std::make_shared<Bind::IndexBuffer>(m_name + "_index", m_indices);
-		m_VAO = Bind::InputLayout::Resolve(m_name + "_VAO", std::vector<std::shared_ptr<Bind::VertexBuffer>>{vert_buffer},
-			instance_buffer ? std::vector<std::shared_ptr<Bind::VertexBuffer>>{instance_buffer} : std::vector<std::shared_ptr<Bind::VertexBuffer>>{}, ind_buffer);
+		m_VAOs.push_back(Bind::InputLayout::Resolve(m_name + "_VAO", std::vector<std::shared_ptr<Bind::VertexBuffer>>{vert_buffer},
+			instance_buffer ? std::vector<std::shared_ptr<Bind::VertexBuffer>>{instance_buffer} : std::vector<std::shared_ptr<Bind::VertexBuffer>>{}, ind_buffer));
 
-		m_render_index = m_VAO->HasIndexBuffer() + ((m_VAO->IsInstanceDraw()) << 1);
+		m_render_index = m_VAOs.back()->HasIndexBuffer() + ((m_VAOs.back()->IsInstanceDraw()) << 1);
 		LOGI("Generating done!")
 	}
 

@@ -349,6 +349,7 @@ namespace SceneGraph {
 
 		void AddTextureConfig(const std::string& name, GLuint binding, Material::TextureCategory type);
 		void AddVertexConfig(std::vector<DrawItems::VertexType> instruction);
+		void ClearVertexConfig();
 
 		inline bool HasVertexConfiguration() const noexcept { return m_vertex_instruction.size(); };
 
@@ -368,6 +369,7 @@ namespace SceneGraph {
 		std::unordered_map<ConfigurationType, std::vector<std::shared_ptr<UniConstFuncBase<Dynamic::Dcb::UniformElementRef>>>> m_uniform_functions;
 		std::unordered_map<ConfigurationType, std::vector<std::shared_ptr<UniConstFuncBase<Dynamic::Dcb::ConstantElementRef>>>> m_constant_functions;
 		std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>> m_texture_vector;
-		std::vector<DrawItems::VertexType> m_vertex_instruction;
+		// 只是在Cook的时候需要这个信息，Cook结束之后会被清空
+		std::vector<std::vector<DrawItems::VertexType>> m_vertex_instruction;
 	};
 }
