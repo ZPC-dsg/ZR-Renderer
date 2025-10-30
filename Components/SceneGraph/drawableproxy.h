@@ -31,6 +31,7 @@ namespace SceneGraph {
 
 		DrawableProxy& AddRootTextureRule(const std::string& shader_name, unsigned int binding, Material::TextureCategory type);
 		DrawableProxy& AddRootVertexRule(std::vector<DrawItems::VertexType> instruction);
+
 		template <ConfigurationType Type, typename Func, typename... Args>
 		DrawableProxy& AddRootUniformRule(Dynamic::Dcb::UniformElementRef ref, Func f, Args&&... args) {
 			m_uniform_refs.push_back(ref);

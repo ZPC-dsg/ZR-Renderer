@@ -35,7 +35,6 @@ namespace DrawItems {
 		Drawable(const std::string& name);
 		virtual ~Drawable() = default;
 
-		inline std::shared_ptr<Bind::InputLayout> GetVertex() const noexcept { return m_VAO; };
 		inline void SetName(const std::string& name) noexcept { m_name = name; };
 		inline std::string GetName() const noexcept { return m_name; };
 

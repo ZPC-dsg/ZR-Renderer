@@ -34,9 +34,9 @@ namespace SceneGraph {
 			m_bindable_sets[m_proxy->m_current_set].resize(this->GetDrawableCount());
 		}
 
-		if (index >= m_bindable_sets[m_proxy->m_current_set][0].size())
+		if (index >= m_bindable_sets[m_proxy->m_current_set].size())
 		{
-			LOGE("Index {} bigger than primitive amount contained in this node!Primitive count:{}.", std::to_string(index).c_str(), std::to_string(m_bindable_sets[m_proxy->m_current_set][0].size()).c_str());
+			LOGE("Index {} bigger than primitive amount contained in this node!Primitive count:{}.", std::to_string(index).c_str(), std::to_string(m_bindable_sets[m_proxy->m_current_set].size()).c_str());
 			assert(false);
 		}
 		m_bindable_sets[m_proxy->m_current_set][index].push_back(bindable_index);
@@ -140,7 +140,7 @@ namespace SceneGraph {
 
 	}
 
-	size_t EntityNode::GetDrawableCount() const noexcept
+	size_t EntityNode::GetDrawableCount() const
 	{
 		return m_drawables.size();
 	}
@@ -287,13 +287,15 @@ namespace SceneGraph {
 		}
 
 		if (m_drawables.size()) {
-			if (node->m_uniform_functions.contains(ConfigurationType::Transformation)) {
-				for (auto& p : node->m_uniform_functions[ConfigurationType::Transformation]) {
+			if (node->m_uniform_function_indexes[m_proxy->m_current_set].contains(ConfigurationType::Transformation)) {
+				for (size_t ind : node->m_uniform_function_indexes[m_proxy->m_current_set][ConfigurationType::Transformation]) {
+					auto& p = node->m_uniform_functions[ConfigurationType::Transformation][ind];
 					(*p)(*this);
 				}
 			}
 			if (node->m_constant_functions.contains(ConfigurationType::Transformation)) {
-				for (auto& p : node->m_constant_functions[ConfigurationType::Transformation]) {
+				for (size_t ind : node->m_constant_function_indexes[m_proxy->m_current_set][ConfigurationType::Transformation]) {
+					auto& p = node->m_constant_functions[ConfigurationType::Transformation][ind];
 					(*p)(*this);
 				}
 			}
@@ -311,16 +313,18 @@ namespace SceneGraph {
 	}
 
 	void EntityNode::Update(ControlNode* node, size_t index) {
-		for (auto& uniform : node->m_uniform_functions) {
+		for (auto& uniform : node->m_uniform_function_indexes[m_proxy->m_current_set]) {
 			if (uniform.first != ConfigurationType::Transformation) {
-				for (auto& p : uniform.second) {
+				for (size_t ind : uniform.second) {
+					auto& p = node->m_uniform_functions[uniform.first][ind];
 					(*p)(*this, index);
 				}
 			}
 		}
-		for (auto& uniform : node->m_constant_functions) {
-			if (uniform.first != ConfigurationType::Transformation) {
-				for (auto& p : uniform.second) {
+		for (auto& constant : node->m_constant_function_indexes[m_proxy->m_current_set]) {
+			if (constant.first != ConfigurationType::Transformation) {
+				for (size_t ind : constant.second) {
+					auto& p = node->m_constant_functions[constant.first][ind];
 					(*p)(*this, index);
 				}
 			}
@@ -341,7 +345,31 @@ namespace SceneGraph {
 		assert(name.length());
 	}
 
-	size_t ControlNode::GetDrawableCount() const noexcept
+	void ControlNode::AddFunctionIndex(bool is_uniform, ConfigurationType Config, size_t index)
+	{
+		if (is_uniform)
+		{
+			m_uniform_function_indexes[m_proxy->m_current_set][Config].push_back(index);
+		}
+		else
+		{
+			m_constant_function_indexes[m_proxy->m_current_set][Config].push_back(index);
+		}
+	}
+
+	void ControlNode::ResizeIndexMap(bool is_uniform)
+	{
+		if (is_uniform && m_uniform_function_indexes.size() < m_proxy->m_render_sets.size())
+		{
+			m_uniform_function_indexes.resize(m_proxy->m_render_sets.size());
+		}
+		else if (!is_uniform && m_constant_function_indexes.size() < m_proxy->m_render_sets.size())
+		{
+			m_constant_function_indexes.resize(m_proxy->m_render_sets.size());
+		}
+	}
+
+	size_t ControlNode::GetDrawableCount() const
 	{
 		return 1;
 	}

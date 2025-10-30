@@ -7,9 +7,10 @@ namespace SceneGraph {
 	DrawableProxy::DrawableProxy(Scene* scene, ControlNode& root, const std::string& name, size_t nodes)
 		:m_scene(scene), m_root(&root), m_name(name), m_nodecount(nodes), m_current_set(-1)
 	{
+		// 预留足够的空间，这样在addrule的时候这两个向量不会因为容量不足而发生复制，如果发生了复制，那么之前加入的rule对其中的ref的引用将会失效
+		// TODO : 去掉这段逻辑，将uniform和constant rule中的element ref改为proxy中的index
 		m_uniform_refs.reserve(100);
 		m_constant_refs.reserve(100);
-		//预留足够的空间，这样在addrule的时候这两个向量不会因为容量不足而发生复制，如果发生了复制，那么之前加入的rule对其中的ref的引用将会失效
 	}
 
 	DrawableProxy& DrawableProxy::AddRootBindable(std::shared_ptr<Bind::Bindable> bindable) {
@@ -82,11 +83,6 @@ namespace SceneGraph {
 	}
 
 	void DrawableProxy::Cook() {
-		if (!m_root->HasVertexConfiguration()) {
-			assert("In order to render drawables, you need to add a vertex configuration before cooking!" && false);
-			return;
-		}
-
 		m_current_set = 0;
 		for (; m_current_set < m_render_sets.size(); m_current_set++)
 		{

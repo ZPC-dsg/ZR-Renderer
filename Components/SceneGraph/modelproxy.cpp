@@ -15,18 +15,17 @@ namespace SceneGraph {
 	}
 
 	void ModelProxy::Cook() {
-		//必须要有一个shader
-		if (!m_root->HasShader()) {
-			assert("In order to render the model, you need to add a shader program before cooking!" && false);
-			return;
+		m_current_set = 0;
+		for (; m_current_set < m_render_sets.size(); m_current_set++)
+		{
+			LOGI("Start cooking model: {} for configuration set: {}...", m_name.c_str(), m_render_sets[m_current_set].c_str());
+			m_root->StartCooking(m_relative_path);
+			LOGI("Finished cooking model: {} for configuration set: {}!", m_name.c_str(), m_render_sets[m_current_set].c_str());
 		}
-		if (!m_root->HasVertexConfiguration()) {
-			assert("In order to render the model, you need to add a vertex configuration before cooking!" && false);
-			return;
-		}
+		m_current_set = 0;
 
-		LOGI("Start cooking model: {}...", m_name.c_str());
-		m_root->StartCooking(m_relative_path);
-		LOGI("Finished cooking model: {}!", m_name.c_str());
+		m_root->ClearTextureConfig();
+		m_root->ClearVertexConfig();
+		m_generated_textures = {};
 	}
 }

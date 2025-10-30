@@ -14,7 +14,7 @@ namespace DrawItems {
 		DrawDefault,DrawIndexed,DrawInstanced,DrawIndexedInstanced
 	};
 
-	void Drawable::Draw(size_t index = 0) {
+	void Drawable::Draw(size_t index) {
 		m_VAOs[index]->Bind();
 		m_renderfunctions[m_render_index](m_VAOs[index]);
 	}

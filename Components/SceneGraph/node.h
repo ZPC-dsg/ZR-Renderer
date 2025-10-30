@@ -116,7 +116,7 @@ namespace SceneGraph {
 		void UnBindAll();
 		void UnBindIndex(size_t index);
 
-		virtual size_t GetDrawableCount() const noexcept;
+		virtual size_t GetDrawableCount() const = 0;
 
 	protected:
 		unsigned int m_id;
@@ -170,7 +170,7 @@ namespace SceneGraph {
 		void Render(ControlNode* node, bool force_update) override;
 		void Update(ControlNode* node, size_t index = 0) override;
 
-		size_t GetDrawableCount() const noexcept override;
+		size_t GetDrawableCount() const override;
 
 	private:
 		void CookVertex(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, const std::vector<DrawItems::VertexType>& instruction);
@@ -302,6 +302,8 @@ namespace SceneGraph {
 		template <ConfigurationType Config, typename Func, typename... Args>
 			requires UniConstFuncConstrains<Config,Func,Args...>
 		void RegisterUniform(Dynamic::Dcb::UniformElementRef& ref, Func f, Args&&... args) {
+			ResizeIndexMap(true);
+
 			if constexpr (Config == ConfigurationType::Transformation) {
 				m_uniform_functions[ConfigurationType::Transformation].push_back(std::make_shared
 					<UniConstTransformFunc<Dynamic::Dcb::UniformElementRef, Func, Args...>>(f, ref, std::forward<Args>(args)...));
@@ -324,10 +326,14 @@ namespace SceneGraph {
 			else {
 				assert("Function type not supported!" && false);
 			}
+
+			AddFunctionIndex(true, Config, m_uniform_functions[Config].size() - 1);
 		}
 		template <ConfigurationType Config, typename Func, typename... Args>
 			requires UniConstFuncConstrains<Config, Func, Args...>
 		void RegisterConstant(Dynamic::Dcb::ConstantElementRef& ref, Func f, Args&&... args) {
+			ResizeIndexMap(false);
+
 			if constexpr (Config == ConfigurationType::Transformation) {
 				m_constant_functions[ConfigurationType::Transformation].push_back(std::make_shared
 					<UniConstTransformFunc<Dynamic::Dcb::ConstantElementRef, Func, Args...>>(f, ref, std::forward<Args>(args)...));
@@ -350,15 +356,14 @@ namespace SceneGraph {
 			else {
 				assert("Function type not supported!" && false);
 			}
+
+			AddFunctionIndex(false, Config, m_constant_functions[Config].size() - 1);
 		}
 
 		void AddTextureConfig(const std::string& name, GLuint binding, Material::TextureCategory type);
 		void AddVertexConfig(std::vector<DrawItems::VertexType> instruction);
 		void ClearTextureConfig();
 		void ClearVertexConfig();
-
-		inline bool HasVertexConfiguration() const noexcept { return m_vertex_instruction.size(); };
-
 
 		void StartCooking(const std::string& rel_path);
 		void CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
@@ -369,14 +374,18 @@ namespace SceneGraph {
 		void Render(ControlNode* node, bool force_update) override;
 		void Update(ControlNode* node, size_t index = 0) override;
 
-		size_t GetDrawableCount() const noexcept override;
+		size_t GetDrawableCount() const override;
+
+		void AddFunctionIndex(bool is_uniform, ConfigurationType Config, size_t index);
+		void ResizeIndexMap(bool is_uniform);
 
 	private:
 		std::unordered_map<ConfigurationType, std::vector<std::shared_ptr<UniConstFuncBase<Dynamic::Dcb::UniformElementRef>>>> m_uniform_functions;
 		std::unordered_map<ConfigurationType, std::vector<std::shared_ptr<UniConstFuncBase<Dynamic::Dcb::ConstantElementRef>>>> m_constant_functions;
-		// std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>> m_texture_vector;
+		std::vector<std::unordered_map<ConfigurationType, std::vector<size_t>>> m_uniform_function_indexes;
+		std::vector<std::unordered_map<ConfigurationType, std::vector<size_t>>> m_constant_function_indexes;
+		// 只是在Cook的时候需要下面这些信息，Cook结束之后会被清空
 		std::vector<std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>> m_texture_vector;
-		// 只是在Cook的时候需要这个信息，Cook结束之后会被清空
 		std::vector<std::vector<DrawItems::VertexType>> m_vertex_instruction;
 	};
 }

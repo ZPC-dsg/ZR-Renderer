@@ -146,6 +146,7 @@ namespace OGLPipeline
 	{
 		// Sponza
 		m_scenes.push_back(AssimpLoader::LoadModel("Sponza", "sponza.obj", m_main_scene));
+		m_scenes[0]->BeginRange("main_defer");
 		m_scenes[0]->AddRootBindable(m_defer_framebuffer);
 
 		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "defer_vertex", "Common", "defer.vert");
@@ -166,11 +167,13 @@ namespace OGLPipeline
 			AddRootTextureRule("specular_tex", 1, SceneGraph::Material::TextureCategory::SPECULAR).
 			AddRootTextureRule("normal_tex", 2, SceneGraph::Material::TextureCategory::NORMAL);
 		m_scenes[0]->ScaleModel(glm::vec3(0.2f));
+		m_scenes[0]->EndRange();
 
 		m_scenes[0]->Cook();
 
 		// Feiji Cup
 		m_scenes.push_back(AssimpLoader::LoadModel("FeijiCup", "Cup_Handle.obj", m_main_scene));
+		m_scenes[1]->BeginRange("main_defer");
 		m_scenes[1]->AddRootBindable(m_defer_framebuffer);
 		m_scenes[1]->AddRootBindable(defer_shader);
 		m_scenes[1]->AddRootUniformRule<SceneGraph::ConfigurationType::Transformation>(defer_shader->EditUniform("model").GetLeafUniform(),
@@ -183,6 +186,7 @@ namespace OGLPipeline
 		m_scenes[1]->AddRootTextureRule("diffuse_tex", 0, SceneGraph::Material::TextureCategory::DIFFUSE).
 			AddRootTextureRule("specular_tex", 1, SceneGraph::Material::TextureCategory::SPECULAR).
 			AddRootTextureRule("normal_tex", 2, SceneGraph::Material::TextureCategory::NORMAL);
+		m_scenes[1]->EndRange();
 		m_scenes[1]->Cook();
 	}
 
@@ -739,6 +743,8 @@ namespace OGLPipeline
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
 		glEnable(GL_CULL_FACE);
+
+		m_scenes[0]->ChangeSet("main_defer");
 
 		auto defer_shader = Bind::ShaderProgram::Resolve("defer_shader", { 0,0 });
 		defer_shader->EditUniform("view") = globalSettings::mainCamera.get_view();
