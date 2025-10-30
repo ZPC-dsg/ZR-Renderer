@@ -73,6 +73,7 @@ namespace SceneGraph {
 
 		void AddControlNode(const std::string& name, const std::string& father_name);
 
+		// Render之前一定要确保current set正确
 		void Render(bool clear_texture = true, bool clear_depth = true, bool clear_stencil = false);
 		void Bind();//绑定根节点所有bindables避免在渲染的时候重复绑定
 
@@ -93,6 +94,7 @@ namespace SceneGraph {
 
 		Scene* m_scene;
 
+		// 假设不同的render set使用不同的shader
 		std::vector<std::string> m_render_sets;
 		size_t m_current_set;
 
@@ -103,5 +105,9 @@ namespace SceneGraph {
 
 		// 场景下所有的bindable
 		std::vector<std::shared_ptr<Bind::Bindable>> m_bindables;
+
+	protected:
+		// 暂时记录由texture rule生成的texture以避免重复生成，在Cook结束后清空
+		std::unordered_map<std::string, size_t> m_generated_textures;
 	};
 }

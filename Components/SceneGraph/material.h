@@ -125,6 +125,7 @@ namespace SceneGraph {
 			AMBIENT_OCCLUSION,
 			ROUGHNESS,
 			METALLIC,
+			NUM
 		};
 
 		Material(const std::string& name);

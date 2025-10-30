@@ -106,7 +106,7 @@ namespace SceneGraph {
 		Node* FindNodeWithID(unsigned int ID);
 
 		virtual void CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
-			std::unordered_map<Material::TextureCategory,std::vector<std::pair<std::string,GLuint>>>& textures, const std::string& rel_path) = 0;
+			std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>& textures, const std::string& rel_path) = 0;
 
 		virtual void Render(ControlNode* node, bool force_update) = 0;
 		virtual void Update(ControlNode* node, size_t index = 0) = 0;
@@ -165,7 +165,7 @@ namespace SceneGraph {
 		}
 
 		void CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
-			std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path) override;
+			std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>& textures, const std::string& rel_path) override;
 
 		void Render(ControlNode* node, bool force_update) override;
 		void Update(ControlNode* node, size_t index = 0) override;
@@ -174,11 +174,16 @@ namespace SceneGraph {
 
 	private:
 		void CookVertex(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, const std::vector<DrawItems::VertexType>& instruction);
-		void CookTexture(const std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path);
+		void CookTexture(const std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>& textures, const std::string& rel_path);
+		size_t LoadDefault(Material::TextureCategory type, GLuint unit, size_t index);
+		size_t LoadTexture(Material::TextureCategory type, const std::string& mat_name, const std::string& rel_path, const SceneGraph::TextureInfo& info, GLuint unit, size_t index);
 
 	private:
 		std::vector<DrawItems::Drawable*> m_drawables;
 		std::vector<Material*> m_materials;//材质信息用来辅助生成纹理
+
+		// 用于确认当前texture绑定点是哪一个
+		std::vector<std::vector<std::vector<std::pair<size_t, GLuint>>>> m_binding_sets;
 
 		Transform m_transform;
 	};
@@ -349,6 +354,7 @@ namespace SceneGraph {
 
 		void AddTextureConfig(const std::string& name, GLuint binding, Material::TextureCategory type);
 		void AddVertexConfig(std::vector<DrawItems::VertexType> instruction);
+		void ClearTextureConfig();
 		void ClearVertexConfig();
 
 		inline bool HasVertexConfiguration() const noexcept { return m_vertex_instruction.size(); };
@@ -356,7 +362,7 @@ namespace SceneGraph {
 
 		void StartCooking(const std::string& rel_path);
 		void CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
-			std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path) override;
+			std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>& textures, const std::string& rel_path) override;
 
 		void StartRender();
 
@@ -368,7 +374,8 @@ namespace SceneGraph {
 	private:
 		std::unordered_map<ConfigurationType, std::vector<std::shared_ptr<UniConstFuncBase<Dynamic::Dcb::UniformElementRef>>>> m_uniform_functions;
 		std::unordered_map<ConfigurationType, std::vector<std::shared_ptr<UniConstFuncBase<Dynamic::Dcb::ConstantElementRef>>>> m_constant_functions;
-		std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>> m_texture_vector;
+		// std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>> m_texture_vector;
+		std::vector<std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>> m_texture_vector;
 		// 只是在Cook的时候需要这个信息，Cook结束之后会被清空
 		std::vector<std::vector<DrawItems::VertexType>> m_vertex_instruction;
 	};

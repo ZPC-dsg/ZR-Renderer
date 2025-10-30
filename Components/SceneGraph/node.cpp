@@ -175,7 +175,7 @@ namespace SceneGraph {
 	}
 
 	void EntityNode::CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
-		std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path) {
+		std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>& textures, const std::string& rel_path) {
 		CookVertex(attribs, instruction);
 		CookTexture(textures, rel_path);
 		
@@ -193,50 +193,82 @@ namespace SceneGraph {
 	}
 
 	//多个同一纹理类型的纹理按照在material中从前往后的存储顺序来决定生成的纹理是哪一个
-	void EntityNode::CookTexture(const std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path) {
-		for (size_t ind = 0; ind < m_materials.size(); ind++) {
+	void EntityNode::CookTexture(const std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>& textures, const std::string& rel_path) {
+		for (size_t ind = 0; ind < m_materials.size(); ind++)
+		{
 			auto& m = m_materials[ind];
-			for (const auto& t : textures) {
-				const auto& tex_info = m->GetTextures(t.first);
-				if (t.second.size() > tex_info.size()) {
-					LOG_WARNING("Material: {} does not have enough {} textures!{} specified, but only {} exist.Using the last one for redundant textures!",
-						m->GetName().c_str(), m->TexTypeToString(t.first).c_str(), std::to_string(t.second.size()).c_str(), std::to_string(tex_info.size()).c_str())
+
+			std::vector<std::vector<SceneGraph::TextureInfo>> tex_infos(Material::TextureCategory::NUM);
+			for (int i = 0; i < tex_infos.size(); i++)
+			{
+				tex_infos[i] = m->GetTextures(static_cast<Material::TextureCategory>(i));
+			}
+
+			std::vector<size_t> tex_nums(Material::TextureCategory::NUM);
+			for (const auto& [type, name, binding] : textures)
+			{
+				int pos = static_cast<int>(type);
+
+				if (tex_nums[pos] >= tex_infos[pos].size())
+				{
+					size_t index = LoadDefault(type, binding, ind);
+					SetBindable(index, ind);
 				}
-
-				for (int i = 0; i < std::min(t.second.size(), tex_info.size()); i++) {
-					OGL_TEXTURE_PARAMETER param;
-					param.wrap_x = TextureInfo::GLWrapMode(tex_info[i].m_wrapmode[0]);
-					param.wrap_y = TextureInfo::GLWrapMode(tex_info[i].m_wrapmode[1]);
-
-					std::string real_path = rel_path.length() ? rel_path + "/" + tex_info[i].m_path : tex_info[i].m_path;
-
-					std::shared_ptr<Bind::ImageTexture2D> tex = Bind::ImageTexture2D::Resolve(m->GetName() + "_" + m->TexTypeToString(t.first) + 
-						"_ " + tex_info[i].m_path, real_path, param, t.second[i].second, rel_path.length());
-					SetBindable(m_proxy->m_bindables.size(), ind);
-					m_proxy->m_bindables.push_back(tex);
-				}
-				if (tex_info.size()) {
-					for (int i = std::min(t.second.size(), tex_info.size()); i < t.second.size(); i++) {
-						OGL_TEXTURE_PARAMETER param;
-						param.wrap_x = TextureInfo::GLWrapMode(tex_info.back().m_wrapmode[0]);
-						param.wrap_y = TextureInfo::GLWrapMode(tex_info.back().m_wrapmode[1]);
-
-						std::shared_ptr<Bind::ImageTexture2D> tex = Bind::ImageTexture2D::Resolve(m->GetName() + "_" + m->TexTypeToString(t.first) +
-							"_ " + tex_info[i].m_path, tex_info.back().m_path, param, t.second[i].second, true);
-						SetBindable(m_proxy->m_bindables.size(), ind);
-						m_proxy->m_bindables.push_back(tex);
-					}
-				}
-				else {
-					for (int i = std::min(t.second.size(), tex_info.size()); i < t.second.size(); i++) {
-						std::shared_ptr<Bind::ImageTexture2D> tex = Bind::ImageTexture2D::Resolve("Default_"+Material::TexTypeToString(t.first), 
-							Material::DefaultTexture(t.first), OGL_TEXTURE_PARAMETER(), t.second[i].second, false);
-						SetBindable(m_proxy->m_bindables.size(), ind);
-						m_proxy->m_bindables.push_back(tex);
-					}
+				else
+				{
+					const auto& tex_info = tex_infos[pos][tex_nums[pos]];
+					size_t index = LoadTexture(type, m->GetName(), rel_path, tex_info, binding, ind);
+					SetBindable(index, ind);
+					tex_nums[pos]++;
 				}
 			}
 		}
+	}
+
+	size_t EntityNode::LoadDefault(Material::TextureCategory type, GLuint unit, size_t index)
+	{
+		size_t ind;
+		if (m_proxy->m_generated_textures.contains("Default_" + Material::TexTypeToString(type)))
+		{
+			ind = m_proxy->m_generated_textures["Default_" + Material::TexTypeToString(type)];
+		}
+		else
+		{
+			ind = m_proxy->m_bindables.size();
+			std::shared_ptr<Bind::ImageTexture2D> tex = Bind::ImageTexture2D::Resolve("Default_" + Material::TexTypeToString(type),
+				Material::DefaultTexture(type), OGL_TEXTURE_PARAMETER(), unit, false);
+			m_proxy->m_bindables.push_back(tex);
+			m_proxy->m_generated_textures["Default_" + Material::TexTypeToString(type)] = ind;
+		}
+
+		m_binding_sets[m_proxy->m_current_set][index].push_back({ind,unit});
+		return ind;
+	}
+
+	size_t EntityNode::LoadTexture(Material::TextureCategory type, const std::string& mat_name, const std::string& rel_path, const SceneGraph::TextureInfo& info, GLuint unit, size_t index)
+	{
+		std::string real_path = rel_path.length() ? rel_path + "/" + info.m_path : info.m_path;
+		
+		size_t ind;
+		if (m_proxy->m_generated_textures.contains(real_path))
+		{
+			ind = m_proxy->m_generated_textures[real_path];
+		}
+		else
+		{
+			OGL_TEXTURE_PARAMETER param;
+			param.wrap_x = TextureInfo::GLWrapMode(info.m_wrapmode[0]);
+			param.wrap_y = TextureInfo::GLWrapMode(info.m_wrapmode[1]);
+
+			ind = m_proxy->m_bindables.size();
+			m_proxy->m_generated_textures[real_path] = ind;
+			std::shared_ptr<Bind::ImageTexture2D> tex = Bind::ImageTexture2D::Resolve(mat_name + "_" + Material::TexTypeToString(type) +
+				"_ " + info.m_path, real_path, param, unit, rel_path.length());
+			m_proxy->m_bindables.push_back(tex);
+		}
+
+		m_binding_sets[m_proxy->m_current_set][index].push_back({ind,unit});
+		return ind;
 	}
 
 	void EntityNode::Render(ControlNode* node, bool force_update) {
@@ -269,7 +301,7 @@ namespace SceneGraph {
 			for (size_t i = 0; i < m_drawables.size(); i++) {
 				Update(node, i);
 				BindIndex(i);
-				m_drawables[i]->Draw();
+				m_drawables[i]->Draw(m_proxy->m_current_set);
 			}
 		}
 
@@ -294,6 +326,11 @@ namespace SceneGraph {
 			}
 		}
 
+		for (const auto& [ind, binding] : m_binding_sets[m_proxy->m_current_set][index])
+		{
+			m_proxy->m_bindables[ind]->ChangeBindingPoint(binding);
+		}
+
 		node->Update(nullptr);//Control node的Update不需要node参数
 	}
 
@@ -310,7 +347,7 @@ namespace SceneGraph {
 	}
 
 	void ControlNode::AddTextureConfig(const std::string& name, GLuint binding, Material::TextureCategory type) {
-		m_texture_vector[type].push_back(std::make_pair(name, binding));
+		m_texture_vector[m_proxy->m_current_set].emplace_back(type, name, binding);
 	}
 
 	void ControlNode::AddVertexConfig(std::vector<DrawItems::VertexType> instruction) {
@@ -350,21 +387,19 @@ namespace SceneGraph {
 		}
 
 		for (Node* child : m_children) {
-			child->CookNode(attribs, m_vertex_instruction[m_proxy->m_current_set], m_texture_vector, rel_path);
+			child->CookNode(attribs, m_vertex_instruction[m_proxy->m_current_set], m_texture_vector[m_proxy->m_current_set], rel_path);
 		}
 
 		shader->BindWithoutUpdate();
-		for (const auto& t : m_texture_vector) {
-			for (const auto& p : t.second) {
-				shader->SetTexture(p.first, p.second);
-			}
+		for (const auto& [_, name, binding] : m_texture_vector[m_proxy->m_current_set]) {
+			shader->SetTexture(name, binding);
 		}
 		shader->UnBind();
 	}
 
 	// TODO
 	void ControlNode::CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
-		std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path) {
+		std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>& textures, const std::string& rel_path) {
 		/*
 		if (HasVertexConfiguration()) {
 			auto new_attribs = Dynamic::Dsr::ShaderReflection::GetVertexAttribs(
@@ -427,6 +462,11 @@ namespace SceneGraph {
 				std::static_pointer_cast<Bind::ConstantBuffer>(b)->Update();
 			}
 		}
+	}
+
+	void ControlNode::ClearTextureConfig()
+	{
+		m_texture_vector = {};
 	}
 
 	void ControlNode::ClearVertexConfig()

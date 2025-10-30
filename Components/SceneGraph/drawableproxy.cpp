@@ -95,7 +95,10 @@ namespace SceneGraph {
 			LOGI("Finished cooking drawable: {} for configuration set: {}!", m_name.c_str(), m_render_sets[m_current_set].c_str());
 		}
 		m_current_set = 0;
+
+		m_root->ClearTextureConfig();
 		m_root->ClearVertexConfig();
+		m_generated_textures = {};
 	}
 
 	void DrawableProxy::Render(bool clear_texture, bool clear_depth, bool clear_stencil) {
