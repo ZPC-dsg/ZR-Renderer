@@ -146,7 +146,7 @@ namespace OGLPipeline
 	{
 		// Sponza
 		m_scenes.push_back(AssimpLoader::LoadModel("Sponza", "sponza.obj", m_main_scene));
-		m_scenes[0]->BeginRange("main_defer");
+		m_scenes[0]->BeginRange("Main_Defer");
 		m_scenes[0]->AddRootBindable(m_defer_framebuffer);
 
 		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "defer_vertex", "Common", "defer.vert");
@@ -167,6 +167,20 @@ namespace OGLPipeline
 			AddRootTextureRule("specular_tex", 1, SceneGraph::Material::TextureCategory::SPECULAR).
 			AddRootTextureRule("normal_tex", 2, SceneGraph::Material::TextureCategory::NORMAL);
 		m_scenes[0]->ScaleModel(glm::vec3(0.2f));
+		m_scenes[0]->EndRange();
+
+		m_scenes[0]->BeginRange("PreZ");
+		m_scenes[0]->AddRootBindable(m_prez_framebuffer);
+
+		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "prez_vertex", "ZPass", "prez.vert");
+		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "prez_fragment", "Common", "empty.frag");
+		auto prez_shader = Bind::ShaderProgram::Resolve("prez_shader", std::vector<GLuint>{vertex, fragment});
+		m_scenes[0]->AddRootBindable(prez_shader);
+
+		m_scenes[0]->AddRootUniformRule<SceneGraph::ConfigurationType::Transformation>(prez_shader->EditUniform("model").GetLeafUniform(),
+			[](glm::mat4 model)->glm::mat4 {return model; });
+		instruction = { DrawItems::VertexType::Position };
+		m_scenes[0]->AddRootVertexRule(instruction);
 		m_scenes[0]->EndRange();
 
 		m_scenes[0]->Cook();
@@ -286,10 +300,6 @@ namespace OGLPipeline
 		params.min_filter = GL_NEAREST;
 		params.mag_filter = GL_NEAREST;
 		m_rt_depthbuffer = m_prez_framebuffer->get_texture_depthstencil<Bind::ImageTexture2D>("depth_tex", params, 0);
-
-		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "prez_vertex", "Common", "defer_shading.vert");
-		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "prez_fragment", "Common", "empty.frag");
-		auto prez_shader = Bind::ShaderProgram::Resolve("prez_shader", { vertex,fragment });
 	}
 
 	void DeferRenderer::PrepareHiZ()
@@ -726,7 +736,13 @@ namespace OGLPipeline
 		glDepthFunc(GL_LEQUAL);
 		glEnable(GL_CULL_FACE);
 
+		m_scenes[m_scene_index]->ChangeSet("PreZ");
 
+		auto prez_shader = Bind::ShaderProgram::Resolve("prez_shader", { 0,0 });
+		prez_shader->EditUniform("view") = globalSettings::mainCamera.get_view();;
+		prez_shader->EditUniform("projection") = globalSettings::mainCamera.get_perspective();
+
+		m_scenes[m_scene_index]->Render();
 
 		APP_RANGE_END();
 	}
@@ -741,10 +757,11 @@ namespace OGLPipeline
 		APP_RANGE_BEGIN("Defer Generation Pass");
 
 		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_TRUE);
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_EQUAL);
 		glEnable(GL_CULL_FACE);
 
-		m_scenes[0]->ChangeSet("main_defer");
+		m_scenes[m_scene_index]->ChangeSet("Main_Defer");
 
 		auto defer_shader = Bind::ShaderProgram::Resolve("defer_shader", { 0,0 });
 		defer_shader->EditUniform("view") = globalSettings::mainCamera.get_view();
