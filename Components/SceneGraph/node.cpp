@@ -194,6 +194,9 @@ namespace SceneGraph {
 
 	//多个同一纹理类型的纹理按照在material中从前往后的存储顺序来决定生成的纹理是哪一个
 	void EntityNode::CookTexture(const std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>& textures, const std::string& rel_path) {
+		m_binding_sets.resize(m_proxy->m_render_sets.size());
+		m_binding_sets.back().resize(m_materials.size());
+
 		for (size_t ind = 0; ind < m_materials.size(); ind++)
 		{
 			auto& m = m_materials[ind];
@@ -313,19 +316,26 @@ namespace SceneGraph {
 	}
 
 	void EntityNode::Update(ControlNode* node, size_t index) {
-		for (auto& uniform : node->m_uniform_function_indexes[m_proxy->m_current_set]) {
-			if (uniform.first != ConfigurationType::Transformation) {
-				for (size_t ind : uniform.second) {
-					auto& p = node->m_uniform_functions[uniform.first][ind];
-					(*p)(*this, index);
+		if (node->m_uniform_function_indexes.size())
+		{
+			for (auto& uniform : node->m_uniform_function_indexes[m_proxy->m_current_set]) {
+				if (uniform.first != ConfigurationType::Transformation) {
+					for (size_t ind : uniform.second) {
+						auto& p = node->m_uniform_functions[uniform.first][ind];
+						(*p)(*this, index);
+					}
 				}
 			}
 		}
-		for (auto& constant : node->m_constant_function_indexes[m_proxy->m_current_set]) {
-			if (constant.first != ConfigurationType::Transformation) {
-				for (size_t ind : constant.second) {
-					auto& p = node->m_constant_functions[constant.first][ind];
-					(*p)(*this, index);
+		
+		if (node->m_constant_function_indexes.size())
+		{
+			for (auto& constant : node->m_constant_function_indexes[m_proxy->m_current_set]) {
+				if (constant.first != ConfigurationType::Transformation) {
+					for (size_t ind : constant.second) {
+						auto& p = node->m_constant_functions[constant.first][ind];
+						(*p)(*this, index);
+					}
 				}
 			}
 		}
@@ -375,6 +385,8 @@ namespace SceneGraph {
 	}
 
 	void ControlNode::AddTextureConfig(const std::string& name, GLuint binding, Material::TextureCategory type) {
+		if(m_texture_vector.size() < m_proxy->m_render_sets.size())
+			m_texture_vector.resize(m_proxy->m_render_sets.size());
 		m_texture_vector[m_proxy->m_current_set].emplace_back(type, name, binding);
 	}
 
@@ -407,10 +419,10 @@ namespace SceneGraph {
 			assert(false);
 		}
 
-		if (attribs.size() != m_vertex_instruction.size())
+		if (attribs.size() != m_vertex_instruction[m_proxy->m_current_set].size())
 		{
 			LOGE("Vertex attribs specified do not match the amount of vertex attribs in vertex shader!Attrib count specified: {}.Attrib count in vertex shader: {}.",
-				std::to_string(m_vertex_instruction.size()).c_str(), std::to_string(attribs.size()).c_str());
+				std::to_string(m_vertex_instruction[m_proxy->m_current_set].size()).c_str(), std::to_string(attribs.size()).c_str());
 			assert(false);
 		}
 
