@@ -2,6 +2,7 @@
 #include <Bindables/shaderprogram.h>
 #include <Bindables/imagetexture2D.h>
 #include <Bindables/constantbuffer.h>
+#include <SceneGraph/drawableproxy.h>
 #include <logging.h>
 
 namespace SceneGraph {
@@ -25,47 +26,27 @@ namespace SceneGraph {
 		m_children = nodes;
 	}
 
-	void Node::SetBindableUnique(std::shared_ptr<Bind::Bindable> bindable, size_t index) {
-		assert(index < m_bindables.size());
+	void Node::SetBindable(size_t bindable_index, size_t index) {
+		if (m_bindable_sets[m_proxy->m_current_set].size() == 0)
+		{
+			m_bindable_sets[m_proxy->m_current_set].resize(this->GetDrawableCount());
+		}
 
-		auto it = m_bindables[index].find(bindable->GetTypeInfo());
-		if (it != m_bindables[index].end()) {
-			it->second[0] = bindable;
+		if (index >= m_bindable_sets[m_proxy->m_current_set][0].size())
+		{
+			LOGE("Index {} bigger than primitive amount contained in this node!Primitive count:{}.", std::to_string(index).c_str(), std::to_string(m_bindable_sets[m_proxy->m_current_set][0].size()).c_str());
+			assert(false);
 		}
-		else {
-			m_bindables[index].insert(std::make_pair(bindable->GetTypeInfo(), std::vector<std::shared_ptr<Bind::Bindable>>{bindable}));
-		}
+		m_bindable_sets[m_proxy->m_current_set][index].push_back(bindable_index);
 	}
 
-	void Node::SetBindable(std::shared_ptr<Bind::Bindable> bindable, size_t index) {
-		assert(index < m_bindables.size());
-		m_bindables[index][bindable->GetTypeInfo()].push_back(bindable);
-	}
-
-	std::shared_ptr<Bind::Bindable> Node::GetBindableUnique(const std::type_index& type_info, size_t index) const{
-		assert(index < m_bindables.size());
-
-		if (m_bindables[index].at(type_info).size() == 0)
-			return nullptr;
-		return m_bindables[index].at(type_info)[0];
-	}
-
-	std::shared_ptr<Bind::Bindable> Node::GetBindable(const std::type_index& type_info, size_t index, size_t shader_index) const {
-		assert(shader_index < m_bindables.size());
-
-		if (m_bindables[index].at(type_info).size() == 0 || index >= m_bindables[index].at(type_info).size()) {
-			return nullptr;
+	void Node::SetProxy(DrawableProxy* proxy)
+	{
+		m_proxy = proxy;
+		for (auto c : m_children)
+		{
+			c->SetProxy(proxy);
 		}
-		return m_bindables[shader_index].at(type_info)[index];
-	}
-
-	bool Node::HasComponent(const std::type_index& type_info) const {
-		for (const auto& bind : m_bindables) {
-			if (bind.count(type_info)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	Node* Node::FindNodeWithName(const std::string& name) {
@@ -96,53 +77,57 @@ namespace SceneGraph {
 		}
 	}
 
-	bool Node::HasShader() const noexcept {
-		return GetBindableUnique(typeid(Bind::ShaderProgram)) != nullptr;
-	}
-
 	void Node::BindAll() {
-		for (auto& mp : m_bindables) {
-			for (auto& p : mp) {
-				if (p.first == typeid(Bind::ShaderProgram))
+		for (auto& prim : m_bindable_sets[m_proxy->m_current_set]) {
+			for (size_t ind : prim) {
+				auto b = m_proxy->m_bindables[ind];
+				if (b->GetTypeInfo() == typeid(Bind::ShaderProgram))
 				{
-					std::static_pointer_cast<Bind::ShaderProgram>(p.second[0])->BindWithoutUpdate();
+					std::static_pointer_cast<Bind::ShaderProgram>(b)->BindWithoutUpdate();
 					continue;
 				}
 
-				for (auto& b : p.second) {
-					b->Bind();
-				}
-			}
-		}
-	}
-
-	void Node::BindIndex(size_t index) {
-		assert(index < m_bindables.size());
-
-		for (auto& p : m_bindables[index]) {
-			for (auto& b : p.second) {
 				b->Bind();
 			}
 		}
 	}
 
+	void Node::BindIndex(size_t index) {
+		if (index >= m_bindable_sets[m_proxy->m_current_set].size())
+		{
+			LOGE("Index to bind bigger than primitive amount!");
+			assert(false);
+		}
+
+		for (size_t ind : m_bindable_sets[m_proxy->m_current_set][index]) {
+			auto b = m_proxy->m_bindables[ind];
+			if (b->GetTypeInfo() == typeid(Bind::ShaderProgram))
+			{
+				std::static_pointer_cast<Bind::ShaderProgram>(b)->BindWithoutUpdate();
+				continue;
+			}
+
+			b->Bind();
+		}
+	}
+
 	void Node::UnBindAll() {
-		for (auto& mp : m_bindables) {
-			for (auto& p : mp) {
-				for (auto& b : p.second) {
-					b->UnBind();
-				}
+		for (auto& prim : m_bindable_sets[m_proxy->m_current_set]) {
+			for (size_t ind : prim) {
+				m_proxy->m_bindables[ind]->UnBind();
 			}
 		}
 	}
 
 	void Node::UnBindIndex(size_t index) {
-		assert(index < m_bindables.size());
+		if (index >= m_bindable_sets[m_proxy->m_current_set].size())
+		{
+			LOGE("Index to unbind bigger than primitive amount!");
+			assert(false);
+		}
 
-		for (auto& p : m_bindables[index]) {
-			for (auto& b : p.second) {
-				b->UnBind();
-			}
+		for (size_t ind : m_bindable_sets[m_proxy->m_current_set][index]) {
+			m_proxy->m_bindables[ind]->UnBind();
 		}
 	}
 
@@ -150,7 +135,12 @@ namespace SceneGraph {
 	EntityNode::EntityNode(const size_t id, const std::string& name, unsigned int drawable_count)
 		:Node(id, name)
 	{
-		m_bindables.resize(drawable_count);
+
+	}
+
+	size_t EntityNode::GetDrawableCount() const noexcept
+	{
+		return m_drawables.size();
 	}
 
 	void EntityNode::SetParent(Node& node) {
@@ -202,7 +192,8 @@ namespace SceneGraph {
 
 	//多个同一纹理类型的纹理按照在material中从前往后的存储顺序来决定生成的纹理是哪一个
 	void EntityNode::CookTexture(const std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path) {
-		for (auto& m : m_materials) {
+		for (size_t ind = 0; ind < m_materials.size(); ind++) {
+			auto& m = m_materials[ind];
 			for (const auto& t : textures) {
 				const auto& tex_info = m->GetTextures(t.first);
 				if (t.second.size() > tex_info.size()) {
@@ -219,7 +210,8 @@ namespace SceneGraph {
 
 					std::shared_ptr<Bind::ImageTexture2D> tex = Bind::ImageTexture2D::Resolve(m->GetName() + "_" + m->TexTypeToString(t.first) + 
 						"_ " + tex_info[i].m_path, real_path, param, t.second[i].second, rel_path.length());
-					SetBindable(tex);
+					SetBindable(m_proxy->m_bindables.size(), ind);
+					m_proxy->m_bindables.push_back(tex);
 				}
 				if (tex_info.size()) {
 					for (int i = std::min(t.second.size(), tex_info.size()); i < t.second.size(); i++) {
@@ -229,14 +221,16 @@ namespace SceneGraph {
 
 						std::shared_ptr<Bind::ImageTexture2D> tex = Bind::ImageTexture2D::Resolve(m->GetName() + "_" + m->TexTypeToString(t.first) +
 							"_ " + tex_info[i].m_path, tex_info.back().m_path, param, t.second[i].second, true);
-						SetBindable(tex);
+						SetBindable(m_proxy->m_bindables.size(), ind);
+						m_proxy->m_bindables.push_back(tex);
 					}
 				}
 				else {
 					for (int i = std::min(t.second.size(), tex_info.size()); i < t.second.size(); i++) {
 						std::shared_ptr<Bind::ImageTexture2D> tex = Bind::ImageTexture2D::Resolve("Default_"+Material::TexTypeToString(t.first), 
 							Material::DefaultTexture(t.first), OGL_TEXTURE_PARAMETER(), t.second[i].second, false);
-						SetBindable(tex);
+						SetBindable(m_proxy->m_bindables.size(), ind);
+						m_proxy->m_bindables.push_back(tex);
 					}
 				}
 			}
@@ -306,7 +300,11 @@ namespace SceneGraph {
 		:Node(id, name)
 	{
 		assert(name.length());
-		m_bindables.resize(1);//Control节点没有drawable，因此只有一个bindable表
+	}
+
+	size_t ControlNode::GetDrawableCount() const noexcept
+	{
+		return 1;
 	}
 
 	void ControlNode::AddTextureConfig(const std::string& name, GLuint binding, Material::TextureCategory type) {
@@ -318,8 +316,29 @@ namespace SceneGraph {
 	}
 
 	void ControlNode::StartCooking(const std::string& rel_path) {
-		auto attribs = Dynamic::Dsr::ShaderReflection::GetVertexAttribs(
-			std::static_pointer_cast<Bind::ShaderProgram>(GetBindableUnique(typeid(Bind::ShaderProgram)))->get_program());
+		std::vector<Dynamic::Dsr::VertexAttrib> attribs;
+		std::shared_ptr<Bind::ShaderProgram> shader = nullptr;
+		for (size_t ind = 0; ind < m_bindable_sets[m_proxy->m_current_set][0].size(); ind++)
+		{
+			auto b = m_proxy->m_bindables[ind];
+			if (b->GetTypeInfo() == typeid(Bind::ShaderProgram))
+			{
+				shader = std::static_pointer_cast<Bind::ShaderProgram>(b);
+				attribs = Dynamic::Dsr::ShaderReflection::GetVertexAttribs(shader->get_program());
+				break;
+			}
+		}
+		if (shader == nullptr)
+		{
+			LOGE("There must be a shader for cooking in a control node!");
+			assert(false);
+		}
+		if (attribs.size() == 0)
+		{
+			LOGE("Vertex attribution amount must be bigger than 0!");
+			assert(false);
+		}
+
 		if (attribs.size() != m_vertex_instruction.size())
 		{
 			LOGE("Vertex attribs specified do not match the amount of vertex attribs in vertex shader!Attrib count specified: {}.Attrib count in vertex shader: {}.",
@@ -331,7 +350,6 @@ namespace SceneGraph {
 			child->CookNode(attribs, m_vertex_instruction, m_texture_vector, rel_path);
 		}
 
-		auto shader = std::static_pointer_cast<Bind::ShaderProgram>(GetBindableUnique(typeid(Bind::ShaderProgram)));
 		shader->BindWithoutUpdate();
 		for (const auto& t : m_texture_vector) {
 			for (const auto& p : t.second) {
@@ -341,9 +359,11 @@ namespace SceneGraph {
 		shader->UnBind();
 	}
 
+	// TODO
 	void ControlNode::CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
 		std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>>& textures, const std::string& rel_path) {
-		if (HasShader() && HasVertexConfiguration()) {
+		/*
+		if (HasVertexConfiguration()) {
 			auto new_attribs = Dynamic::Dsr::ShaderReflection::GetVertexAttribs(
 				std::static_pointer_cast<Bind::ShaderProgram>(GetBindableUnique(typeid(Bind::ShaderProgram)))->get_program());
 			std::string error_code = "Vertex configuration does not match properly!Adjust for control node " + m_name + " needed.";
@@ -366,6 +386,7 @@ namespace SceneGraph {
 				child->CookNode(attribs, instruction, m_texture_vector.size() ? m_texture_vector : textures, rel_path);
 			}
 		}
+		*/
 	}
 
 	void ControlNode::StartRender() {
@@ -391,10 +412,17 @@ namespace SceneGraph {
 	}
 
 	void ControlNode::Update(ControlNode* node, size_t index) {
-		std::static_pointer_cast<Bind::ShaderProgram>(m_bindables[0][typeid(Bind::ShaderProgram)][0])->UpdateOnly();
-
-		for (auto p : m_bindables[0][typeid(Bind::ConstantBuffer)]) {
-			std::static_pointer_cast<Bind::ConstantBuffer>(p)->Update();
+		for (size_t ind : m_bindable_sets[m_proxy->m_current_set][0])
+		{
+			auto b = m_proxy->m_bindables[ind];
+			if (b->GetTypeInfo() == typeid(Bind::ShaderProgram))
+			{
+				std::static_pointer_cast<Bind::ShaderProgram>(b)->UpdateOnly();
+			}
+			else if (b->GetTypeInfo() == typeid(Bind::ConstantBuffer))
+			{
+				std::static_pointer_cast<Bind::ConstantBuffer>(b)->Update();
+			}
 		}
 	}
 }

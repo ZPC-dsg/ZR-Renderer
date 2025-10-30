@@ -98,30 +98,12 @@ namespace SceneGraph {
 		void AddChild(Node& child);
 		void ResetChildren(std::vector<Node*> nodes);
 		
-		void SetBindableUnique(std::shared_ptr<Bind::Bindable> bindable, size_t index = 0);
-		void SetBindable(std::shared_ptr<Bind::Bindable> bindabl, size_t index = 0);
-
-		std::shared_ptr<Bind::Bindable> GetBindableUnique(const std::type_index& type_info, size_t index = 0) const;
-		std::shared_ptr<Bind::Bindable> GetBindable(const std::type_index& type_info, size_t index, size_t drawable_index = 0) const;
-		template <typename T>
-		std::shared_ptr<T> GetBindableUnique(size_t index = 0) const {
-			return std::dynamic_pointer_cast<T>(GetBindableUnique(typeid(T), index));
-		}
-		template <typename T>
-		std::shared_ptr<T> GetBindable(size_t index, size_t drawable_index = 0) const {
-			return std::dynamic_pointer_cast<T>(GetBindable(typeid(T), index, drawable_index));
-		}
-
-		bool HasComponent(const std::type_index& type_info) const;
-		template <typename T>
-		bool HasComponent() {
-			return HasComponent(typeid(T));
-		}
+		void SetBindable(size_t bindable_index, size_t index = 0);
+		void SetProxy(DrawableProxy* proxy);
+		inline DrawableProxy* GetProxy() const noexcept { return m_proxy; }
 
 		Node* FindNodeWithName(const std::string& name);
 		Node* FindNodeWithID(unsigned int ID);
-
-		bool HasShader() const noexcept;
 
 		virtual void CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
 			std::unordered_map<Material::TextureCategory,std::vector<std::pair<std::string,GLuint>>>& textures, const std::string& rel_path) = 0;
@@ -134,11 +116,12 @@ namespace SceneGraph {
 		void UnBindAll();
 		void UnBindIndex(size_t index);
 
+		virtual size_t GetDrawableCount() const noexcept;
+
 	protected:
 		unsigned int m_id;
 		std::string m_name;
 
-		std::vector<std::unordered_map<std::type_index, std::vector<std::shared_ptr<Bind::Bindable>>>> m_bindables;
 		std::vector<std::vector<std::vector<size_t>>> m_bindable_sets;
 		DrawableProxy* m_proxy; // µ±Ç°node¹éÊôµÄproxy
 
@@ -186,6 +169,8 @@ namespace SceneGraph {
 
 		void Render(ControlNode* node, bool force_update) override;
 		void Update(ControlNode* node, size_t index = 0) override;
+
+		size_t GetDrawableCount() const noexcept override;
 
 	private:
 		void CookVertex(const std::vector<Dynamic::Dsr::VertexAttrib>& attribs, const std::vector<DrawItems::VertexType>& instruction);
@@ -377,11 +362,12 @@ namespace SceneGraph {
 		void Render(ControlNode* node, bool force_update) override;
 		void Update(ControlNode* node, size_t index = 0) override;
 
+		size_t GetDrawableCount() const noexcept override;
+
 	private:
 		std::unordered_map<ConfigurationType, std::vector<std::shared_ptr<UniConstFuncBase<Dynamic::Dcb::UniformElementRef>>>> m_uniform_functions;
 		std::unordered_map<ConfigurationType, std::vector<std::shared_ptr<UniConstFuncBase<Dynamic::Dcb::ConstantElementRef>>>> m_constant_functions;
 		std::unordered_map<Material::TextureCategory, std::vector<std::pair<std::string, GLuint>>> m_texture_vector;
 		std::vector<DrawItems::VertexType> m_vertex_instruction;
-		std::vector<std::string> m_simple_vertex_instruction;
 	};
 }

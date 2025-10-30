@@ -71,6 +71,7 @@ std::shared_ptr<SceneGraph::ModelProxy> AssimpLoader::LoadModel(const std::strin
 	root->AddChild(model_root);
 
 	std::shared_ptr<SceneGraph::ModelProxy> proxy(new SceneGraph::ModelProxy(&scene, static_cast<SceneGraph::ControlNode&>(*root), ID, rel_path, pScene->mName.C_Str()));
+	root->SetProxy(proxy.get());
 
 	scene.AddNode(std::move(root));
 	return proxy;

@@ -94,6 +94,7 @@ std::shared_ptr<SceneGraph::DrawableProxy> DrawableLoader::LoadGeometry(SceneGra
 	scene.AddMaterial(std::move(mat));
 
 	std::shared_ptr<SceneGraph::DrawableProxy> proxy(new SceneGraph::DrawableProxy(&scene, static_cast<SceneGraph::ControlNode&>(*root), param.m_name));
+	root->SetProxy(proxy.get());
 
 	scene.AddNode(std::move(geo));
 	scene.AddNode(std::move(root));
@@ -141,6 +142,7 @@ static void DrawableLoader::LoadGeometryAsChild(SceneGraph::Scene& scene, const 
 	}
 	geo->AddMaterial(*mat);
 	scene.AddMaterial(std::move(mat));
+	geo->SetProxy(node->GetProxy());
 
 	scene.AddNode(std::move(geo));
 	return;

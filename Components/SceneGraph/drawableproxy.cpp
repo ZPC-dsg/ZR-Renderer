@@ -5,7 +5,7 @@
 
 namespace SceneGraph {
 	DrawableProxy::DrawableProxy(Scene* scene, ControlNode& root, const std::string& name, size_t nodes)
-		:m_scene(scene), m_root(&root), m_name(name), m_nodecount(nodes)
+		:m_scene(scene), m_root(&root), m_name(name), m_nodecount(nodes), m_current_set(-1)
 	{
 		m_uniform_refs.reserve(100);
 		m_constant_refs.reserve(100);
@@ -13,14 +13,8 @@ namespace SceneGraph {
 	}
 
 	DrawableProxy& DrawableProxy::AddRootBindable(std::shared_ptr<Bind::Bindable> bindable) {
-		const std::type_index& type_info = bindable->GetTypeInfo();
-		if (type_info == typeid(Bind::ConstantBuffer) || type_info == typeid(Bind::CubeMap) || type_info == typeid(Bind::ImageTexture2D)
-			|| type_info == typeid(Bind::ImageTexture2DArray)) {
-			m_root->SetBindable(bindable);
-		}
-		else {
-			m_root->SetBindableUnique(bindable);
-		}
+		m_root->SetBindable(m_bindables.size());
+		m_bindables.push_back(bindable);
 
 		return *this;
 	}
@@ -31,14 +25,8 @@ namespace SceneGraph {
 			return *this;
 		}
 
-		const std::type_index& type_info = bindable->GetTypeInfo();
-		if (type_info == typeid(Bind::ConstantBuffer) || type_info == typeid(Bind::CubeMap) || type_info == typeid(Bind::ImageTexture2D)
-			|| type_info == typeid(Bind::ImageTexture2DArray)) {
-			m_controls[name]->SetBindable(bindable);
-		}
-		else {
-			m_controls[name]->SetBindableUnique(bindable);
-		}
+		m_controls[name]->SetBindable(m_bindables.size());
+		m_bindables.push_back(bindable);
 
 		return *this;
 	}
@@ -93,25 +81,20 @@ namespace SceneGraph {
 		m_scene->AddNode(std::move(control));
 	}
 
-	void DrawableProxy::ChangeRenderTarget(std::shared_ptr<Bind::RenderTarget> new_target)
-	{
-		m_root->SetBindableUnique(new_target);
-	}
-
 	void DrawableProxy::Cook() {
-		//必须要有一个shader
-		if (!m_root->HasShader()) {
-			assert("In order to render drawables, you need to add a shader program before cooking!" && false);
-			return;
-		}
 		if (!m_root->HasVertexConfiguration()) {
 			assert("In order to render drawables, you need to add a vertex configuration before cooking!" && false);
 			return;
 		}
 
-		LOGI("Start cooking drawable: {}...", m_name.c_str());
-		m_root->StartCooking("");//空字符串代表渲染的不是模型，纹理需要到textures文件夹而不是model自己的文件夹中寻找
-		LOGI("Finished cooking drawable: {}!", m_name.c_str());
+		m_current_set = 0;
+		for (; m_current_set < m_render_sets.size(); m_current_set++)
+		{
+			LOGI("Start cooking drawable: {} for configuration set: {}...", m_name.c_str(), m_render_sets[m_current_set].c_str());
+			m_root->StartCooking("");//空字符串代表渲染的不是模型，纹理需要到textures文件夹而不是model自己的文件夹中寻找
+			LOGI("Finished cooking drawable: {} for configuration set: {}!", m_name.c_str(), m_render_sets[m_current_set].c_str());
+		}
+		m_current_set = 0;
 	}
 
 	void DrawableProxy::Render(bool clear_texture, bool clear_depth, bool clear_stencil) {
@@ -136,5 +119,38 @@ namespace SceneGraph {
 
 	void DrawableProxy::Bind() {
 		m_root->BindAll();
+	}
+
+	void DrawableProxy::BeginRange(const std::string& name)
+	{
+		if (std::find(m_render_sets.begin(), m_render_sets.end(), name) != m_render_sets.end())
+		{
+			LOGE("Configuration Set :{} already exists!", name.c_str());
+			assert(false);
+		}
+		else
+		{
+			m_current_set = m_render_sets.size();
+			m_render_sets.push_back(name);
+		}
+	}
+
+	void DrawableProxy::EndRange()
+	{
+		m_current_set = -1;
+	}
+
+	void DrawableProxy::ChangeSet(const std::string& name)
+	{
+		auto it = std::find(m_render_sets.begin(), m_render_sets.end(), name);
+		if (it == m_render_sets.end())
+		{
+			LOGE("Configuration Set named {} does not exist!", name.c_str());
+			assert(false);
+		}
+		else
+		{
+			m_current_set = it - m_render_sets.begin();
+		}
 	}
 }

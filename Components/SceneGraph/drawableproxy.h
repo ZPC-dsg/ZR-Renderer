@@ -17,6 +17,8 @@ namespace SceneGraph {
 	class DrawableProxy {
 		friend class DrawableLoader;
 		friend class Node;
+		friend class EntityNode;
+		friend class ControlNode;
 
 	public:
 		virtual ~DrawableProxy() = default;
@@ -70,10 +72,14 @@ namespace SceneGraph {
 		virtual void Cook();
 
 		void AddControlNode(const std::string& name, const std::string& father_name);
-		void ChangeRenderTarget(std::shared_ptr<Bind::RenderTarget> new_target);
 
 		void Render(bool clear_texture = true, bool clear_depth = true, bool clear_stencil = false);
 		void Bind();//绑定根节点所有bindables避免在渲染的时候重复绑定
+
+		// 开始准备某一个set所需的资源
+		void BeginRange(const std::string& name);
+		void EndRange();
+		void ChangeSet(const std::string& name);
 
 	protected:
 		DrawableProxy(Scene* scene, ControlNode& root, const std::string& name, size_t nodes = 0);
@@ -88,7 +94,7 @@ namespace SceneGraph {
 		Scene* m_scene;
 
 		std::vector<std::string> m_render_sets;
-		size_t current_set;
+		size_t m_current_set;
 
 	protected:
 		//保存所有的proxy，因为需要在程序运行中将这些proxy的引用传递给node，它们不能在中途离开作用域
