@@ -17,7 +17,7 @@ namespace OGLPipeline
 	const char* DeferRenderer::scene_names[] =
 	{
 		"Sponza",
-		"Feiji Cup",
+		// "Feiji Cup",
 	};
 
 	DeferRenderer::DeferRenderer(const std::string& scene_name, const std::string ui_name)
@@ -116,14 +116,14 @@ namespace OGLPipeline
 		m_prez_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height);
 		m_rt_depthbuffer->UpdateNewResource(m_defer_framebuffer->get_depth_stencil(), m_rt_depthbuffer->get_parameter());
 
-		m_defer_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height);
+		m_defer_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height, -1, false);
 		OGL_TEXTURE_PARAMETER params;
 		m_rt_albedo_specular->UpdateNewResource(m_defer_framebuffer->get_render_target(1), params);
 		params.min_filter = GL_NEAREST;
 		params.mag_filter = GL_NEAREST;
 		m_rt_position_anisotrophy->UpdateNewResource(m_defer_framebuffer->get_render_target(0), params);
 		m_rt_normal_metallic_roughness->UpdateNewResource(m_defer_framebuffer->get_render_target(2), params);
-		m_rt_depthbuffer->UpdateNewResource(m_defer_framebuffer->get_depth_stencil(), params);
+		m_defer_framebuffer->UpdateNewResource(-1, m_rt_depthbuffer->GetResource());
 
 		m_defer_lighting_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height);
 		params.min_filter = GL_LINEAR;
@@ -149,9 +149,9 @@ namespace OGLPipeline
 		m_scenes[0]->BeginRange("Main_Defer");
 		m_scenes[0]->AddRootBindable(m_defer_framebuffer);
 
-		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "defer_vertex", "Common", "defer.vert");
-		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "defer_fragment", "Common", "defer.frag");
-		auto defer_shader = Bind::ShaderProgram::Resolve("defer_shader", std::vector<GLuint>{vertex, fragment});
+		GLuint defer_vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "defer_vertex", "Common", "defer.vert");
+		GLuint defer_fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "defer_fragment", "Common", "defer.frag");
+		auto defer_shader = Bind::ShaderProgram::Resolve("defer_shader", std::vector<GLuint>{defer_vertex, defer_fragment});
 		m_scenes[0]->AddRootBindable(defer_shader);
 
 		m_scenes[0]->AddRootUniformRule<SceneGraph::ConfigurationType::Transformation>(defer_shader->EditUniform("model").GetLeafUniform(),
@@ -172,9 +172,9 @@ namespace OGLPipeline
 		m_scenes[0]->BeginRange("PreZ");
 		m_scenes[0]->AddRootBindable(m_prez_framebuffer);
 
-		GLuint vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "prez_vertex", "ZPass", "prez.vert");
-		GLuint fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "prez_fragment", "Common", "empty.frag");
-		auto prez_shader = Bind::ShaderProgram::Resolve("prez_shader", std::vector<GLuint>{vertex, fragment});
+		GLuint prez_vertex = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Vertex, "prez_vertex", "ZPass", "prez.vert");
+		GLuint prez_fragment = Bind::ShaderObject::Resolve(Bind::ShaderObject::ShaderType::Fragment, "prez_fragment", "Common", "empty.frag");
+		auto prez_shader = Bind::ShaderProgram::Resolve("prez_shader", std::vector<GLuint>{prez_vertex, prez_fragment});
 		m_scenes[0]->AddRootBindable(prez_shader);
 
 		m_scenes[0]->AddRootUniformRule<SceneGraph::ConfigurationType::Transformation>(prez_shader->EditUniform("model").GetLeafUniform(),
@@ -186,6 +186,7 @@ namespace OGLPipeline
 		m_scenes[0]->Cook();
 
 		// Feiji Cup
+		/*
 		m_scenes.push_back(AssimpLoader::LoadModel("FeijiCup", "Cup_Handle.obj", m_main_scene));
 		m_scenes[1]->BeginRange("main_defer");
 		m_scenes[1]->AddRootBindable(m_defer_framebuffer);
@@ -202,6 +203,7 @@ namespace OGLPipeline
 			AddRootTextureRule("normal_tex", 2, SceneGraph::Material::TextureCategory::NORMAL);
 		m_scenes[1]->EndRange();
 		m_scenes[1]->Cook();
+		*/
 	}
 
 	void DeferRenderer::PrepareDeferBuffers()
@@ -210,7 +212,7 @@ namespace OGLPipeline
 		m_defer_framebuffer->AppendTexture<GL_TEXTURE_2D>("rt_postion_anisotrophy", {}, 1, 1, GL_RGBA16F)
 			.AppendTexture<GL_TEXTURE_2D>("rt_albedo_specular", {}, 1, 1, GL_RGBA8)
 			.AppendTexture<GL_TEXTURE_2D>("rt_normal_metallic_roughness", {}, 1, 1, GL_RGBA16F)
-			.AppendDepthComponent<GL_TEXTURE_2D>("rt_depth", 1, GL_DEPTH_COMPONENT32F).CheckCompleteness();
+			.AppendDepthComponent(m_rt_depthbuffer).CheckCompleteness();
 
 		OGL_TEXTURE_PARAMETER params;
 		m_rt_albedo_specular = m_defer_framebuffer->get_texture_image<Bind::ImageTexture2D>("albe_spec_texture", "rt_albedo_specular", params, 1);
@@ -733,7 +735,7 @@ namespace OGLPipeline
 
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LEQUAL);
+		glDepthFunc(GL_LESS);
 		glEnable(GL_CULL_FACE);
 
 		m_scenes[m_scene_index]->ChangeSet("PreZ");
@@ -758,8 +760,8 @@ namespace OGLPipeline
 
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
-		glDepthFunc(GL_EQUAL);
-		glEnable(GL_CULL_FACE);
+		glDepthFunc(GL_LEQUAL);
+		glDisable(GL_CULL_FACE);
 
 		m_scenes[m_scene_index]->ChangeSet("Main_Defer");
 

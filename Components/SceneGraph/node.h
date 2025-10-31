@@ -379,6 +379,8 @@ namespace SceneGraph {
 		void AddFunctionIndex(bool is_uniform, ConfigurationType Config, size_t index);
 		void ResizeIndexMap(bool is_uniform);
 
+		void ResizeTexRuleToFit();
+
 	private:
 		std::unordered_map<ConfigurationType, std::vector<std::shared_ptr<UniConstFuncBase<Dynamic::Dcb::UniformElementRef>>>> m_uniform_functions;
 		std::unordered_map<ConfigurationType, std::vector<std::shared_ptr<UniConstFuncBase<Dynamic::Dcb::ConstantElementRef>>>> m_constant_functions;

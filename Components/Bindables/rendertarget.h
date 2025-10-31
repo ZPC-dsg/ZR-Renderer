@@ -80,6 +80,8 @@ namespace Bind {
 		template <>
 		RenderTarget& AppendDepthStencil<GL_RENDERBUFFER>(const std::string& tag, unsigned int slices, GLenum depth_stencil_format) noxnd;
 
+		RenderTarget& AppendDepthComponent(std::shared_ptr<Bind::AbstractTexture> depth_texture);
+
 		void CheckCompleteness() noxnd;
 
 		void Bind() noxnd override;
@@ -126,7 +128,9 @@ namespace Bind {
 
 		void ChangeTexture(std::shared_ptr<AbstractTexture> new_texture, size_t pos = 0, bool clear_color = true);
 		// 将全部的渲染目标（包括深度模板缓冲）销毁并重新创建，仅适用于所有的render target都是由append texture创建的
-		void DestroyAndCreateNew(unsigned int width, unsigned int height);
+		void DestroyAndCreateNew(unsigned int width, unsigned int height, int texture_bits = -1, bool destroy_depth = true);
+		// 由外部负责更新的资源，pos为负代表更新depthstencil component
+		void UpdateNewResource(int pos, std::shared_ptr<AbstractResource> resource);
 
 	private:
 		void gen_framebuffer(unsigned int* mips, unsigned int* slices, bool is_renderbuffer, bool is_depthonly) noxnd;

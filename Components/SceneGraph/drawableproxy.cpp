@@ -138,6 +138,7 @@ namespace SceneGraph {
 	void DrawableProxy::EndRange()
 	{
 		m_current_set = -1;
+		m_root->ResizeTexRuleToFit();
 	}
 
 	void DrawableProxy::ChangeSet(const std::string& name)

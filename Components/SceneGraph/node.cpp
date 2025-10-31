@@ -176,6 +176,9 @@ namespace SceneGraph {
 
 	void EntityNode::CookNode(std::vector<Dynamic::Dsr::VertexAttrib>& attribs, std::vector<DrawItems::VertexType>& instruction,
 		std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>& textures, const std::string& rel_path) {
+		m_bindable_sets.resize(m_proxy->m_render_sets.size());
+		m_bindable_sets[m_proxy->m_current_set].resize(m_materials.size());
+
 		CookVertex(attribs, instruction);
 		CookTexture(textures, rel_path);
 		
@@ -195,10 +198,10 @@ namespace SceneGraph {
 	//多个同一纹理类型的纹理按照在material中从前往后的存储顺序来决定生成的纹理是哪一个
 	void EntityNode::CookTexture(const std::vector<std::tuple<Material::TextureCategory, std::string, GLuint>>& textures, const std::string& rel_path) {
 		m_binding_sets.resize(m_proxy->m_render_sets.size());
-		m_binding_sets.back().resize(m_materials.size());
 
 		for (size_t ind = 0; ind < m_materials.size(); ind++)
 		{
+			m_binding_sets[m_proxy->m_current_set].resize(m_materials.size());
 			auto& m = m_materials[ind];
 
 			std::vector<std::vector<SceneGraph::TextureInfo>> tex_infos(Material::TextureCategory::NUM);
@@ -400,7 +403,7 @@ namespace SceneGraph {
 		std::shared_ptr<Bind::ShaderProgram> shader = nullptr;
 		for (size_t ind = 0; ind < m_bindable_sets[m_proxy->m_current_set][0].size(); ind++)
 		{
-			auto b = m_proxy->m_bindables[ind];
+			auto b = m_proxy->m_bindables[m_bindable_sets[m_proxy->m_current_set][0][ind]];
 			if (b->GetTypeInfo() == typeid(Bind::ShaderProgram))
 			{
 				shader = std::static_pointer_cast<Bind::ShaderProgram>(b);
@@ -512,5 +515,13 @@ namespace SceneGraph {
 	void ControlNode::ClearVertexConfig()
 	{
 		m_vertex_instruction = {};
+	}
+
+	void ControlNode::ResizeTexRuleToFit()
+	{
+		if (m_texture_vector.size() < m_proxy->m_render_sets.size())
+		{
+			m_texture_vector.resize(m_proxy->m_render_sets.size());
+		}
 	}
 }
