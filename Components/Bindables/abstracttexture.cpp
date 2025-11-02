@@ -73,13 +73,18 @@ namespace Bind {
 		glCopyImageSubData(src->GetResourceRaw(), src_desc.target, src_level, 0, 0, 0, GetResourceRaw(), dst_desc.target, dst_level, 0, 0, 0, src_desc.width, src_desc.height, 1);
 	}
 
-	void AbstractTexture::DestroyAndCreateNew(const OGL_TEXTURE2D_DESC& new_desc)
+	void AbstractTexture::DestroyAndCreateNew(const OGL_TEXTURE2D_DESC& new_desc, void* data)
 	{
 		assert(new_desc.target == get_description().target);
 		
 		std::string r_name = resource_name();
 		m_resource = std::static_pointer_cast<RawTexture2D>(ResourceFactory::CreateTexture2D(r_name, new_desc));
 		m_resource->SetParameters(m_params);
+
+		if (data)
+		{
+			m_resource->Update({ 0,0,(float)new_desc.width,(float)new_desc.height }, new_desc.cpu_format, new_desc.data_type, (void*)data, false);
+		}
 	}
 
 	void AbstractTexture::UpdateNewResource(std::shared_ptr<AbstractResource> resource, const OGL_TEXTURE_PARAMETER& params)

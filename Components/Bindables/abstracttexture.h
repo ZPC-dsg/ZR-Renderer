@@ -30,7 +30,7 @@ namespace Bind {
 		// 复制整张image
 		void CopyImage(std::shared_ptr<AbstractTexture> src, GLint src_level = 0, GLint dst_level = 0);
 		// 仅仅重新创建底层资源，名称，绑定目标等均不改变
-		void DestroyAndCreateNew(const OGL_TEXTURE2D_DESC& new_desc);
+		void DestroyAndCreateNew(const OGL_TEXTURE2D_DESC& new_desc, void* data = nullptr);
 		// 只有在确保m_resource已经被销毁之后才调用该函数
 		void UpdateNewResource(std::shared_ptr<AbstractResource> resource, const OGL_TEXTURE_PARAMETER& params);
 

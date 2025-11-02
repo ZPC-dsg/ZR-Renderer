@@ -14,6 +14,8 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+invariant gl_Position;
+
 void main()
 {
     world_normal = normalize(mat3(transpose(inverse(model))) * aNormal);

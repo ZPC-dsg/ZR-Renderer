@@ -131,6 +131,10 @@ namespace Bind {
 		void DestroyAndCreateNew(unsigned int width, unsigned int height, int texture_bits = -1, bool destroy_depth = true);
 		// 由外部负责更新的资源，pos为负代表更新depthstencil component
 		void UpdateNewResource(int pos, std::shared_ptr<AbstractResource> resource);
+		// 如果某个资源不是由该render target生成的，那么在外部生成源对该资源进行重新生成之前，必须调用该函数释放render target内部对这个资源的引用
+		// 本质是由于没有一个资源引用计数系统导致的问题，但是该系统创建比较麻烦，暂时通过人为控制顺序代替
+		// TODO
+		void ReleaseResource(int index);
 
 	private:
 		void gen_framebuffer(unsigned int* mips, unsigned int* slices, bool is_renderbuffer, bool is_depthonly) noxnd;

@@ -229,6 +229,18 @@ namespace Bind {
 	std::string RenderTarget::GetUID() const noexcept {
 		return GenerateUID(m_tag);
 	}
+	void RenderTarget::ReleaseResource(int index)
+	{
+		if (index >= 0)
+		{
+			assert(index < m_rendertargets.size());
+			m_rendertargets[index] = nullptr;
+		}
+		else
+		{
+			m_depthstencil = nullptr;
+		}
+	}
 
 	void RenderTarget::change_texture_slice(unsigned int index, unsigned int slice, unsigned int mip) noxnd {
 		assert(index < m_rendertargets.size());
@@ -403,8 +415,6 @@ namespace Bind {
 		}
 		else
 		{
-			assert(m_depthstencil);
-
 			glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
 			m_depthstencil = resource;
 			if (m_is_depthstencil_texture)

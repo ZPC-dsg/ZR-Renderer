@@ -6,7 +6,10 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+invariant gl_Position;
+
 void main()
 {
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    vec4 world_pos = model * vec4(aPos, 1.0);
+    gl_Position = projection * view * world_pos;
 }

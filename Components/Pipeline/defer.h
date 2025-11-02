@@ -67,7 +67,7 @@ namespace OGLPipeline
 
 	private:
 		void PrepareScene();
-		void PrepareDefaultTextures();
+		void PrepareDefaultTextures(bool resize);
 		void PrepareSamplers();
 
 		void PreparePreZ();

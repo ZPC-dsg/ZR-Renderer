@@ -54,6 +54,7 @@ namespace OGLPipeline
 		PrepareDeferLighting();
 		PrepareLightBuffer();
 		PrepareAO();
+		PrepareDefaultTextures(false);
 
 		g_post_processor.PreparePostProcess();
 	}
@@ -113,8 +114,9 @@ namespace OGLPipeline
 
 	void DeferRenderer::resize()
 	{
+		m_defer_framebuffer->ReleaseResource(-1);
 		m_prez_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height);
-		m_rt_depthbuffer->UpdateNewResource(m_defer_framebuffer->get_depth_stencil(), m_rt_depthbuffer->get_parameter());
+		m_rt_depthbuffer->UpdateNewResource(m_prez_framebuffer->get_depth_stencil(), m_rt_depthbuffer->get_parameter());
 
 		m_defer_framebuffer->DestroyAndCreateNew(globalSettings::screen_width, globalSettings::screen_height, -1, false);
 		OGL_TEXTURE_PARAMETER params;
@@ -137,7 +139,7 @@ namespace OGLPipeline
 		desc.height = globalSettings::screen_height;
 		m_AO_filtered_texture->DestroyAndCreateNew(desc);
 
-		PrepareDefaultTextures();
+		PrepareDefaultTextures(true);
 
 		g_post_processor.OnResize();
 	}
@@ -239,7 +241,7 @@ namespace OGLPipeline
 		m_point_sampler = Bind::Sampler::Resolve("point_sampler", 2, param);
 	}
 
-	void DeferRenderer::PrepareDefaultTextures()
+	void DeferRenderer::PrepareDefaultTextures(bool resize)
 	{
 		OGL_TEXTURE2D_DESC desc;
 		desc.target = GL_TEXTURE_2D;
@@ -250,7 +252,14 @@ namespace OGLPipeline
 		desc.data_type = GL_UNSIGNED_BYTE;
 
 		std::vector<uint8_t> data(globalSettings::screen_width * globalSettings::screen_height, 255);
-		m_default_white_texture = Bind::ImageTexture2D::Resolve("default_white", desc, {}, 3, (void*)data.data());
+		if (resize)
+		{
+			m_default_white_texture->DestroyAndCreateNew(desc, (void*)data.data());
+		}
+		else
+		{
+			m_default_white_texture = Bind::ImageTexture2D::Resolve("default_white", desc, {}, 3, (void*)data.data());
+		}
 	}
 
 	void DeferRenderer::PrepareDeferLighting()
@@ -769,7 +778,7 @@ namespace OGLPipeline
 		defer_shader->EditUniform("view") = globalSettings::mainCamera.get_view();
 		defer_shader->EditUniform("projection") = globalSettings::mainCamera.get_perspective();
 
-		m_scenes[m_scene_index]->Render();
+		m_scenes[m_scene_index]->Render(true, false);
 
 		APP_RANGE_END();
 	}
